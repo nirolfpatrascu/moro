@@ -262,7 +262,7 @@ export default function OutgoingInvoicesPage() {
   const yearOptions = Array.from({ length: 5 }, (_, i) => currentYear - i);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>

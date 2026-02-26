@@ -66,7 +66,7 @@ export default function CashFlowDashboardPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-semibold text-[#2D1B0E]">Cash Flow</h2>

@@ -57,7 +57,7 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
+    <div className="mx-auto max-w-2xl space-y-8">
       <div>
         <h2 className="text-2xl font-semibold text-[#2D1B0E]">Setari</h2>
         <p className="mt-1 text-sm text-[#9B8B7F]">Gestioneaza accesul la aplicatie</p>
