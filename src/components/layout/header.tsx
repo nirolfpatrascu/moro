@@ -8,6 +8,7 @@ const pageTitles: Record<string, string> = {
   "/income": "Incasari Zilnice",
   "/incoming": "Intrare Facturi",
   "/outgoing": "Iesire Facturi",
+  "/import": "Import Excel",
   "/dashboard/pnl": "Profit & Loss",
   "/dashboard/cashflow": "Cash Flow",
   "/dashboard/cogs": "COGS",

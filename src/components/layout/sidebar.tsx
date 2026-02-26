@@ -18,6 +18,7 @@ import {
   Menu,
   X,
   Coffee,
+  Upload,
 } from "lucide-react";
 
 const navItems = [
@@ -25,6 +26,7 @@ const navItems = [
   { label: "Incasari Zilnice", href: "/income", icon: Receipt },
   { label: "Intrare Facturi", href: "/incoming", icon: FileInput },
   { label: "Iesire Facturi", href: "/outgoing", icon: FileOutput },
+  { label: "Import Excel", href: "/import", icon: Upload },
   { type: "separator" as const, label: "Rapoarte" },
   { label: "P&L", href: "/dashboard/pnl", icon: TrendingUp },
   { label: "Cash Flow", href: "/dashboard/cashflow", icon: Wallet },

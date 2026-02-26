@@ -100,9 +100,13 @@ model IncomingInvoice {
   issueDate       String?                         // Data Emitere (string — some bad formats)
   issueDateParsed DateTime?                       // Parsed date when possible
   dueDate         DateTime?                       // Scadenta
+  itemDescription String?                         // Descriere articol (from Excel)
+  qty             Float     @default(0)           // Cantitate
+  unitPrice       Float     @default(0)           // Pret unitar
   amountExVat     Float     @default(0)           // Suma fara TVA
   vatAmount       Float     @default(0)           // Val TVA
   totalAmount     Float     @default(0)           // Suma de plata
+  status          String    @default("UNPAID")    // PAID, UNPAID, PARTIAL
   paidAmount      Float     @default(0)           // Achitati
   paymentYear     Int?                            // An Plata
   paymentMonth    String?                         // Luna Plata
