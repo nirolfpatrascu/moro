@@ -11,7 +11,6 @@ import {
 import { useToast } from "@/components/ui/toast";
 import {
   Plus,
-  Search,
   Filter,
   Eye,
   Pencil,
@@ -19,30 +18,38 @@ import {
   Download,
   ChevronLeft,
   ChevronRight,
-  Receipt,
+  CalendarDays,
   X,
-  Zap,
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
-import { RECEIPT_TYPES, PAYMENT_METHODS } from "@/lib/validations/receipt";
-import { ReceiptFormModal } from "@/components/receipts/receipt-form";
-import { ReceiptDetailModal } from "@/components/receipts/receipt-detail";
+import { DailyIncomeFormModal } from "@/components/daily-income/daily-income-form";
+import { DailyIncomeDetailModal } from "@/components/daily-income/daily-income-detail";
 import { exportToCSV } from "@/lib/export";
 
-interface ReceiptRow {
+interface DailyIncomeRow {
   id: string;
   locationId: string;
   date: string;
-  type: string;
-  description: string | null;
-  category: string | null;
-  amount: number;
-  paymentMethod: string;
-  receiptNumber: string | null;
-  notes: string | null;
+  dayOfWeek: string | null;
+  totalSales: number;
+  tva: number;
+  salesExVat: number;
+  receiptCount: number;
+  avgReceipt: number;
+  barSales: number;
+  barProductCount: number;
+  kitchenSales: number;
+  kitchenProductCount: number;
+  cashAmount: number;
+  cardAmount: number;
+  transferAmount: number;
+  accountAmount: number;
+  deliveryAmount: number;
+  tipsFiscal: number;
+  tipsTotal: number;
   createdAt: string;
   location: { id: string; code: string; name: string };
 }
@@ -54,35 +61,24 @@ interface Pagination {
   totalPages: number;
 }
 
-interface DailyTotals {
-  [date: string]: { sales: number; refunds: number; expenses: number; net: number };
+interface Summary {
+  totalRevenue: number;
+  totalRevenueExVat: number;
+  totalDays: number;
 }
 
-type SortField = "date" | "amount" | "type" | "createdAt";
-
-const TYPE_BADGE: Record<string, { label: string; variant: "success" | "warning" | "danger" }> = {
-  SALE: { label: "Vanzare", variant: "success" },
-  REFUND: { label: "Retur", variant: "warning" },
-  EXPENSE: { label: "Cheltuiala", variant: "danger" },
-};
-
-const PAYMENT_BADGE: Record<string, string> = {
-  CASH: "Cash",
-  CARD: "Card",
-  TRANSFER: "Transfer",
-};
+type SortField = "date" | "totalSales";
 
 export default function IncomePage() {
-  const [receipts, setReceipts] = useState<ReceiptRow[]>([]);
-  const [dailyTotals, setDailyTotals] = useState<DailyTotals>({});
+  const [records, setRecords] = useState<DailyIncomeRow[]>([]);
   const [pagination, setPagination] = useState<Pagination>({
     page: 1, pageSize: 20, total: 0, totalPages: 0,
   });
+  const [summary, setSummary] = useState<Summary>({
+    totalRevenue: 0, totalRevenueExVat: 0, totalDays: 0,
+  });
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
   const [filterLocation, setFilterLocation] = useState("");
-  const [filterType, setFilterType] = useState("");
-  const [filterPayment, setFilterPayment] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [sortBy, setSortBy] = useState<SortField>("date");
@@ -91,11 +87,10 @@ export default function IncomePage() {
   const [showFilters, setShowFilters] = useState(false);
 
   const [formOpen, setFormOpen] = useState(false);
-  const [editingReceipt, setEditingReceipt] = useState<ReceiptRow | null>(null);
-  const [detailReceipt, setDetailReceipt] = useState<ReceiptRow | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<ReceiptRow | null>(null);
+  const [editingRecord, setEditingRecord] = useState<DailyIncomeRow | null>(null);
+  const [detailRecord, setDetailRecord] = useState<DailyIncomeRow | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<DailyIncomeRow | null>(null);
 
-  // Remember last used location
   const [lastLocationId, setLastLocationId] = useState("");
 
   const { toast } = useToast();
@@ -113,7 +108,7 @@ export default function IncomePage() {
       .catch(() => {});
   }, [lastLocationId]);
 
-  const fetchReceipts = useCallback(async () => {
+  const fetchRecords = useCallback(async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
@@ -121,43 +116,29 @@ export default function IncomePage() {
       params.set("pageSize", "20");
       params.set("sortBy", sortBy);
       params.set("sortDir", sortDir);
-      if (search) params.set("search", search);
       if (filterLocation) params.set("locationId", filterLocation);
-      if (filterType) params.set("type", filterType);
-      if (filterPayment) params.set("paymentMethod", filterPayment);
       if (dateFrom) params.set("dateFrom", dateFrom);
       if (dateTo) params.set("dateTo", dateTo);
 
-      const res = await fetch(`/api/receipts?${params}`);
+      const res = await fetch(`/api/daily-income?${params}`);
       const data = await res.json();
 
       if (res.ok) {
-        setReceipts(data.data);
-        setDailyTotals(data.dailyTotals || {});
+        setRecords(data.data);
         setPagination(data.pagination);
+        setSummary(data.summary);
       }
     } catch {
-      toast({ title: "Eroare", description: "Nu s-au putut incarca incasarile", variant: "danger" });
+      toast({ title: "Eroare", description: "Nu s-au putut incarca incasarile zilnice", variant: "danger" });
     } finally {
       setLoading(false);
     }
-  }, [pagination.page, search, filterLocation, filterType, filterPayment, dateFrom, dateTo, sortBy, sortDir, toast]);
+  }, [pagination.page, filterLocation, dateFrom, dateTo, sortBy, sortDir, toast]);
 
   useEffect(() => {
-    fetchReceipts();
-  }, [fetchReceipts]);
+    fetchRecords();
+  }, [fetchRecords]);
 
-  // Debounced search
-  const [searchInput, setSearchInput] = useState("");
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setSearch(searchInput);
-      setPagination((p) => ({ ...p, page: 1 }));
-    }, 400);
-    return () => clearTimeout(timer);
-  }, [searchInput]);
-
-  // Sorting
   const handleSort = (field: SortField) => {
     if (sortBy === field) {
       setSortDir((d) => (d === "asc" ? "desc" : "asc"));
@@ -176,10 +157,10 @@ export default function IncomePage() {
   const handleDelete = async () => {
     if (!deleteTarget) return;
     try {
-      const res = await fetch(`/api/receipts/${deleteTarget.id}`, { method: "DELETE" });
+      const res = await fetch(`/api/daily-income/${deleteTarget.id}`, { method: "DELETE" });
       if (res.ok) {
-        toast({ title: "Incasare stearsa", variant: "success" });
-        fetchReceipts();
+        toast({ title: "Inregistrare stearsa", variant: "success" });
+        fetchRecords();
       } else {
         toast({ title: "Eroare la stergere", variant: "danger" });
       }
@@ -191,21 +172,11 @@ export default function IncomePage() {
 
   const handleFormSuccess = () => {
     setFormOpen(false);
-    setEditingReceipt(null);
-    fetchReceipts();
+    setEditingRecord(null);
+    fetchRecords();
   };
 
-  // Group receipts by date for daily totals rows
-  const groupedDates = new Set(
-    receipts.map((r) => new Date(r.date).toISOString().split("T")[0])
-  );
-
-  // Build display rows: for each date group, show receipts then a totals row
-  const sortedDates = Array.from(groupedDates).sort((a, b) =>
-    sortDir === "desc" ? b.localeCompare(a) : a.localeCompare(b)
-  );
-
-  const hasFilters = filterLocation || filterType || filterPayment || dateFrom || dateTo;
+  const hasFilters = filterLocation || dateFrom || dateTo;
 
   return (
     <div className="space-y-8">
@@ -214,7 +185,10 @@ export default function IncomePage() {
         <div>
           <h2 className="text-xl font-semibold text-[#2D1B0E]">Incasari Zilnice</h2>
           <p className="mt-0.5 text-xs text-[#9B8B7F]">
-            {pagination.total} incasari inregistrate
+            {pagination.total} zile inregistrate
+            {summary.totalRevenue > 0 && (
+              <> &middot; Total: {formatCurrency(summary.totalRevenue)}</>
+            )}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -222,15 +196,26 @@ export default function IncomePage() {
             variant="outline"
             size="sm"
             onClick={() => {
-              exportToCSV(receipts, "incasari", [
+              exportToCSV(records, "incasari-zilnice", [
                 { header: "Data", accessor: (r) => new Date(r.date).toLocaleDateString("ro-RO") },
-                { header: "Tip", accessor: (r) => r.type },
-                { header: "Descriere", accessor: (r) => r.description || "" },
-                { header: "Categorie", accessor: (r) => r.category || "" },
-                { header: "Suma", accessor: (r) => r.amount },
-                { header: "Metoda plata", accessor: (r) => r.paymentMethod },
-                { header: "Nr. bon", accessor: (r) => r.receiptNumber || "" },
+                { header: "Zi", accessor: (r) => r.dayOfWeek || "" },
                 { header: "Locatie", accessor: (r) => r.location.code },
+                { header: "Total Vanzari", accessor: (r) => r.totalSales },
+                { header: "TVA", accessor: (r) => r.tva },
+                { header: "Fara TVA", accessor: (r) => r.salesExVat },
+                { header: "Nr Bonuri", accessor: (r) => r.receiptCount },
+                { header: "Cec Mediu", accessor: (r) => r.avgReceipt },
+                { header: "Bar", accessor: (r) => r.barSales },
+                { header: "Nr Prod Bar", accessor: (r) => r.barProductCount },
+                { header: "Bucatarie", accessor: (r) => r.kitchenSales },
+                { header: "Nr Prod Bucatarie", accessor: (r) => r.kitchenProductCount },
+                { header: "Cash", accessor: (r) => r.cashAmount },
+                { header: "Card", accessor: (r) => r.cardAmount },
+                { header: "Virament", accessor: (r) => r.transferAmount },
+                { header: "Cont", accessor: (r) => r.accountAmount },
+                { header: "Livrator", accessor: (r) => r.deliveryAmount },
+                { header: "Tips Fiscal", accessor: (r) => r.tipsFiscal },
+                { header: "Tips Total", accessor: (r) => r.tipsTotal },
               ]);
             }}
           >
@@ -238,43 +223,28 @@ export default function IncomePage() {
             Export CSV
           </Button>
           <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              setEditingReceipt(null);
-              setFormOpen(true);
-            }}
-          >
-            <Zap className="h-4 w-4" />
-            Incasare rapida
-          </Button>
-          <Button
             variant="primary"
             size="sm"
             onClick={() => {
-              setEditingReceipt(null);
+              setEditingRecord(null);
               setFormOpen(true);
             }}
           >
             <Plus className="h-4 w-4" />
-            Adauga incasare
+            Adauga zi
           </Button>
         </div>
       </div>
 
-      {/* Search & Filters */}
+      {/* Filters */}
       <Card>
         <CardContent>
           <div className="flex flex-wrap items-center gap-3">
-            <div className="relative flex-1 min-w-[200px]">
-              <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted" />
-              <input
-                type="text"
-                placeholder="Cauta dupa descriere, nr. bon, categorie..."
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                className="h-10 w-full rounded-lg border border-border bg-surface pl-3 pr-10 text-sm text-right text-text placeholder:text-right placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary/50"
-              />
+            <div className="flex items-center gap-2 flex-1 min-w-[200px]">
+              <CalendarDays className="h-4 w-4 text-text-muted" />
+              <span className="text-sm text-text-muted">
+                {summary.totalDays} zile &middot; {formatCurrency(summary.totalRevenue)}
+              </span>
             </div>
             <Button
               variant={showFilters ? "secondary" : "outline"}
@@ -303,26 +273,6 @@ export default function IncomePage() {
                   <option key={l.id} value={l.id}>{l.name}</option>
                 ))}
               </select>
-              <select
-                value={filterType}
-                onChange={(e) => { setFilterType(e.target.value); setPagination((p) => ({ ...p, page: 1 })); }}
-                className="h-9 rounded-lg border border-border bg-surface px-3 text-sm"
-              >
-                <option value="">Toate tipurile</option>
-                {RECEIPT_TYPES.map((t) => (
-                  <option key={t.value} value={t.value}>{t.label}</option>
-                ))}
-              </select>
-              <select
-                value={filterPayment}
-                onChange={(e) => { setFilterPayment(e.target.value); setPagination((p) => ({ ...p, page: 1 })); }}
-                className="h-9 rounded-lg border border-border bg-surface px-3 text-sm"
-              >
-                <option value="">Toate metodele</option>
-                {PAYMENT_METHODS.map((p) => (
-                  <option key={p.value} value={p.value}>{p.label}</option>
-                ))}
-              </select>
               <input
                 type="date"
                 value={dateFrom}
@@ -343,8 +293,6 @@ export default function IncomePage() {
                   size="sm"
                   onClick={() => {
                     setFilterLocation("");
-                    setFilterType("");
-                    setFilterPayment("");
                     setDateFrom("");
                     setDateTo("");
                   }}
@@ -372,25 +320,23 @@ export default function IncomePage() {
                     Data <SortIcon field="date" />
                   </span>
                 </th>
-                <th
-                  className="px-4 py-3 text-left font-medium text-text-secondary cursor-pointer select-none hover:text-text"
-                  onClick={() => handleSort("type")}
-                >
-                  <span className="inline-flex items-center gap-1">
-                    Tip <SortIcon field="type" />
-                  </span>
-                </th>
-                <th className="px-4 py-3 text-left font-medium text-text-secondary">Descriere</th>
-                <th className="px-4 py-3 text-center font-medium text-text-secondary">Plata</th>
                 <th className="px-4 py-3 text-center font-medium text-text-secondary">Locatie</th>
                 <th
                   className="px-4 py-3 text-right font-medium text-text-secondary cursor-pointer select-none hover:text-text"
-                  onClick={() => handleSort("amount")}
+                  onClick={() => handleSort("totalSales")}
                 >
                   <span className="inline-flex items-center justify-end gap-1">
-                    Suma <SortIcon field="amount" />
+                    Total Vanzari <SortIcon field="totalSales" />
                   </span>
                 </th>
+                <th className="px-4 py-3 text-right font-medium text-text-secondary">TVA</th>
+                <th className="px-4 py-3 text-right font-medium text-text-secondary">Fara TVA</th>
+                <th className="px-4 py-3 text-center font-medium text-text-secondary">Nr Bonuri</th>
+                <th className="px-4 py-3 text-right font-medium text-text-secondary">Bar</th>
+                <th className="px-4 py-3 text-right font-medium text-text-secondary">Bucatarie</th>
+                <th className="px-4 py-3 text-right font-medium text-text-secondary">Cash</th>
+                <th className="px-4 py-3 text-right font-medium text-text-secondary">Card</th>
+                <th className="px-4 py-3 text-right font-medium text-text-secondary">Tips</th>
                 <th className="px-4 py-3 text-right font-medium text-text-secondary">Actiuni</th>
               </tr>
             </thead>
@@ -398,7 +344,7 @@ export default function IncomePage() {
               <tbody>
                 {Array.from({ length: 5 }).map((_, i) => (
                   <tr key={i} className="border-b border-border-light">
-                    {Array.from({ length: 7 }).map((_, j) => (
+                    {Array.from({ length: 12 }).map((_, j) => (
                       <td key={j} className="px-4 py-3">
                         <div className="h-4 animate-pulse rounded bg-border-light" />
                       </td>
@@ -406,105 +352,89 @@ export default function IncomePage() {
                   </tr>
                 ))}
               </tbody>
-            ) : receipts.length === 0 ? (
+            ) : records.length === 0 ? (
               <tbody>
                 <tr>
-                  <td colSpan={7} className="px-4 py-12 text-center">
-                    <Receipt className="mx-auto mb-3 h-12 w-12 text-border" />
-                    <p className="text-text-muted">Nu exista incasari</p>
+                  <td colSpan={12} className="px-4 py-12 text-center">
+                    <CalendarDays className="mx-auto mb-3 h-12 w-12 text-border" />
+                    <p className="text-text-muted">Nu exista incasari zilnice</p>
                     <p className="mt-1 text-xs text-text-muted">
-                      Inregistreaza prima incasare
+                      Importa din Excel sau adauga manual
                     </p>
                   </td>
                 </tr>
               </tbody>
             ) : (
-              sortedDates.map((dateKey) => {
-                const dayReceipts = receipts.filter(
-                  (r) => new Date(r.date).toISOString().split("T")[0] === dateKey
-                );
-                const totals = dailyTotals[dateKey];
-
-                return (
-                  <tbody key={dateKey}>
-                    {dayReceipts.map((r) => {
-                      const typeInfo = TYPE_BADGE[r.type] || TYPE_BADGE.SALE;
-                      return (
-                        <tr
-                          key={r.id}
-                          className="border-b border-border-light last:border-0 transition-colors hover:bg-surface-hover"
+              <tbody>
+                {records.map((r) => (
+                  <tr
+                    key={r.id}
+                    className="border-b border-border-light last:border-0 transition-colors hover:bg-surface-hover"
+                  >
+                    <td className="px-4 py-3 text-text whitespace-nowrap">
+                      {new Date(r.date).toLocaleDateString("ro-RO")}
+                      {r.dayOfWeek && (
+                        <span className="ml-1.5 text-xs text-text-muted">({r.dayOfWeek})</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <Badge variant="outline">{r.location.code}</Badge>
+                    </td>
+                    <td className="px-4 py-3 text-right font-semibold text-text">
+                      {formatCurrency(r.totalSales)}
+                    </td>
+                    <td className="px-4 py-3 text-right text-text-secondary">
+                      {formatCurrency(r.tva)}
+                    </td>
+                    <td className="px-4 py-3 text-right text-text-secondary">
+                      {formatCurrency(r.salesExVat)}
+                    </td>
+                    <td className="px-4 py-3 text-center text-text-secondary">
+                      {r.receiptCount}
+                    </td>
+                    <td className="px-4 py-3 text-right text-text-secondary">
+                      {formatCurrency(r.barSales)}
+                    </td>
+                    <td className="px-4 py-3 text-right text-text-secondary">
+                      {formatCurrency(r.kitchenSales)}
+                    </td>
+                    <td className="px-4 py-3 text-right text-text-secondary">
+                      {formatCurrency(r.cashAmount)}
+                    </td>
+                    <td className="px-4 py-3 text-right text-text-secondary">
+                      {formatCurrency(r.cardAmount)}
+                    </td>
+                    <td className="px-4 py-3 text-right text-text-secondary">
+                      {formatCurrency(r.tipsTotal)}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center justify-end gap-1">
+                        <button
+                          onClick={() => setDetailRecord(r)}
+                          className="rounded p-1.5 text-text-muted hover:bg-surface-hover hover:text-text"
+                          title="Detalii"
                         >
-                          <td className="px-4 py-3 text-text-secondary">
-                            {new Date(r.date).toLocaleDateString("ro-RO")}
-                          </td>
-                          <td className="px-4 py-3">
-                            <Badge variant={typeInfo.variant}>{typeInfo.label}</Badge>
-                          </td>
-                          <td className="px-4 py-3 text-text-secondary max-w-[200px] truncate">
-                            {r.description || r.category || "-"}
-                          </td>
-                          <td className="px-4 py-3 text-center">
-                            <Badge variant="outline">{PAYMENT_BADGE[r.paymentMethod] || r.paymentMethod}</Badge>
-                          </td>
-                          <td className="px-4 py-3 text-center">
-                            <Badge variant="outline">{r.location.code}</Badge>
-                          </td>
-                          <td className="px-4 py-3 text-right font-medium text-text">
-                            {r.type === "REFUND" || r.type === "EXPENSE" ? "-" : ""}
-                            {formatCurrency(r.amount)}
-                          </td>
-                          <td className="px-4 py-3">
-                            <div className="flex items-center justify-end gap-1">
-                              <button
-                                onClick={() => setDetailReceipt(r)}
-                                className="rounded p-1.5 text-text-muted hover:bg-surface-hover hover:text-text"
-                                title="Detalii"
-                              >
-                                <Eye className="h-4 w-4" />
-                              </button>
-                              <button
-                                onClick={() => { setEditingReceipt(r); setFormOpen(true); }}
-                                className="rounded p-1.5 text-text-muted hover:bg-surface-hover hover:text-primary"
-                                title="Editeaza"
-                              >
-                                <Pencil className="h-4 w-4" />
-                              </button>
-                              <button
-                                onClick={() => setDeleteTarget(r)}
-                                className="rounded p-1.5 text-text-muted hover:bg-danger-light hover:text-danger"
-                                title="Sterge"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                    {/* Daily totals row */}
-                    {totals && (
-                      <tr className="bg-background/60 border-b-2 border-border">
-                        <td className="px-4 py-2 text-xs font-semibold text-text-muted">
-                          Total {new Date(dateKey).toLocaleDateString("ro-RO")}
-                        </td>
-                        <td colSpan={4} className="px-4 py-2 text-xs text-text-muted">
-                          <span className="text-success">{formatCurrency(totals.sales)} vanzari</span>
-                          {totals.refunds > 0 && (
-                            <span className="ml-3 text-warning">-{formatCurrency(totals.refunds)} retururi</span>
-                          )}
-                          {totals.expenses > 0 && (
-                            <span className="ml-3 text-danger">-{formatCurrency(totals.expenses)} cheltuieli</span>
-                          )}
-                        </td>
-                        <td className="px-4 py-2 text-right text-xs font-bold text-text">
-                          Net: {formatCurrency(totals.net)}
-                        </td>
-                        <td />
-                      </tr>
-                    )}
-                  </tbody>
-                );
-              })
+                          <Eye className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => { setEditingRecord(r); setFormOpen(true); }}
+                          className="rounded p-1.5 text-text-muted hover:bg-surface-hover hover:text-primary"
+                          title="Editeaza"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => setDeleteTarget(r)}
+                          className="rounded p-1.5 text-text-muted hover:bg-danger-light hover:text-danger"
+                          title="Sterge"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
             )}
           </table>
         </div>
@@ -541,25 +471,25 @@ export default function IncomePage() {
       </Card>
 
       {/* Form Modal */}
-      <ReceiptFormModal
+      <DailyIncomeFormModal
         open={formOpen}
         onOpenChange={(open) => {
           setFormOpen(open);
-          if (!open) setEditingReceipt(null);
+          if (!open) setEditingRecord(null);
         }}
-        receipt={editingReceipt}
+        record={editingRecord}
         locations={locations}
         onSuccess={handleFormSuccess}
         defaultLocationId={lastLocationId}
       />
 
       {/* Detail Modal */}
-      <ReceiptDetailModal
-        receipt={detailReceipt}
-        onClose={() => setDetailReceipt(null)}
+      <DailyIncomeDetailModal
+        record={detailRecord}
+        onClose={() => setDetailRecord(null)}
         onEdit={(r) => {
-          setDetailReceipt(null);
-          setEditingReceipt(r);
+          setDetailRecord(null);
+          setEditingRecord(r);
           setFormOpen(true);
         }}
       />
@@ -568,8 +498,8 @@ export default function IncomePage() {
       <Modal
         open={!!deleteTarget}
         onOpenChange={() => setDeleteTarget(null)}
-        title="Sterge incasare"
-        description={`Esti sigur ca vrei sa stergi aceasta incasare de ${deleteTarget ? formatCurrency(deleteTarget.amount) : ""}?`}
+        title="Sterge inregistrare"
+        description={`Esti sigur ca vrei sa stergi inregistrarea din ${deleteTarget ? new Date(deleteTarget.date).toLocaleDateString("ro-RO") : ""} (${deleteTarget?.location?.name || ""}) — ${deleteTarget ? formatCurrency(deleteTarget.totalSales) : ""}?`}
       >
         <div className="space-y-4">
           <p className="text-sm text-text-secondary">

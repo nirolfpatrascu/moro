@@ -105,10 +105,10 @@ async function getSummary(from: Date, to: Date, locationId?: string) {
   const locFilter = locationId ? { locationId } : {};
   const dateFilter = { gte: from, lte: to };
 
-  // Revenue from receipts (SALE type)
-  const revenueAgg = await prisma.receipt.aggregate({
-    where: { ...locFilter, date: dateFilter, type: "SALE" },
-    _sum: { amount: true },
+  // Revenue from DailyIncome
+  const revenueAgg = await prisma.dailyIncome.aggregate({
+    where: { ...locFilter, date: dateFilter },
+    _sum: { totalSales: true, receiptCount: true },
     _count: true,
   });
 
@@ -143,13 +143,13 @@ async function getSummary(from: Date, to: Date, locationId?: string) {
   const prevFrom = new Date(from.getTime() - periodMs);
   const prevTo = new Date(from.getTime() - 1);
 
-  const prevRevenueAgg = await prisma.receipt.aggregate({
-    where: { ...locFilter, date: { gte: prevFrom, lte: prevTo }, type: "SALE" },
-    _sum: { amount: true },
+  const prevRevenueAgg = await prisma.dailyIncome.aggregate({
+    where: { ...locFilter, date: { gte: prevFrom, lte: prevTo } },
+    _sum: { totalSales: true },
   });
 
-  const revenue = revenueAgg._sum.amount || 0;
-  const prevRevenue = prevRevenueAgg._sum.amount || 0;
+  const revenue = revenueAgg._sum.totalSales || 0;
+  const prevRevenue = prevRevenueAgg._sum.totalSales || 0;
   const expenses = expensesAgg._sum.totalAmount || 0;
   const revenueTrend = prevRevenue > 0
     ? Math.round(((revenue - prevRevenue) / prevRevenue) * 100)
@@ -158,7 +158,7 @@ async function getSummary(from: Date, to: Date, locationId?: string) {
   return {
     revenue,
     revenueTrend,
-    receiptCount: revenueAgg._count,
+    receiptCount: revenueAgg._sum.receiptCount || 0,
     expenses,
     netProfit: revenue - expenses,
     outstandingPayables: payablesAgg._sum.remainingAmount || 0,
@@ -180,9 +180,9 @@ async function getCashFlow(locationId?: string) {
     const monthLabel = d.toLocaleDateString("ro-RO", { month: "short", year: "2-digit" });
 
     const [inflow, outflow] = await Promise.all([
-      prisma.receipt.aggregate({
-        where: { ...locFilter, date: { gte: d, lte: monthEnd }, type: "SALE" },
-        _sum: { amount: true },
+      prisma.dailyIncome.aggregate({
+        where: { ...locFilter, date: { gte: d, lte: monthEnd } },
+        _sum: { totalSales: true },
       }),
       prisma.incomingInvoice.aggregate({
         where: { ...locFilter, issueDateParsed: { gte: d, lte: monthEnd } },
@@ -192,7 +192,7 @@ async function getCashFlow(locationId?: string) {
 
     months.push({
       month: monthLabel,
-      inflow: inflow._sum.amount || 0,
+      inflow: inflow._sum.totalSales || 0,
       outflow: outflow._sum.totalAmount || 0,
     });
   }
@@ -209,9 +209,9 @@ async function getByLocation(from: Date, to: Date) {
   const result = await Promise.all(
     locations.map(async (loc) => {
       const [revenue, expenses] = await Promise.all([
-        prisma.receipt.aggregate({
-          where: { locationId: loc.id, date: { gte: from, lte: to }, type: "SALE" },
-          _sum: { amount: true },
+        prisma.dailyIncome.aggregate({
+          where: { locationId: loc.id, date: { gte: from, lte: to } },
+          _sum: { totalSales: true },
         }),
         prisma.incomingInvoice.aggregate({
           where: { locationId: loc.id, issueDateParsed: { gte: from, lte: to } },
@@ -222,7 +222,7 @@ async function getByLocation(from: Date, to: Date) {
       return {
         location: loc.code,
         locationName: loc.name,
-        revenue: revenue._sum.amount || 0,
+        revenue: revenue._sum.totalSales || 0,
         expenses: expenses._sum.totalAmount || 0,
       };
     })
@@ -309,10 +309,10 @@ async function getAging() {
 async function getRecent(locationId?: string) {
   const locFilter = locationId ? { locationId } : {};
 
-  const [receipts, incomingInv, outgoingInv] = await Promise.all([
-    prisma.receipt.findMany({
+  const [dailyIncomes, incomingInv, outgoingInv] = await Promise.all([
+    prisma.dailyIncome.findMany({
       where: locFilter,
-      orderBy: { createdAt: "desc" },
+      orderBy: { date: "desc" },
       take: 10,
       include: { location: { select: { code: true } } },
     }),
@@ -346,13 +346,13 @@ async function getRecent(locationId?: string) {
   };
 
   const items: TxItem[] = [
-    ...receipts.map((r) => ({
-      id: r.id,
-      type: r.type === "SALE" ? "receipt" : r.type === "REFUND" ? "refund" : "expense",
-      description: r.description || r.category || "Incasare",
-      amount: r.amount,
-      date: r.createdAt.toISOString(),
-      location: r.location.code,
+    ...dailyIncomes.map((d) => ({
+      id: d.id,
+      type: "receipt" as const,
+      description: `Incasari ${new Date(d.date).toLocaleDateString("ro-RO")}`,
+      amount: d.totalSales,
+      date: d.date.toISOString(),
+      location: d.location.code,
     })),
     ...incomingInv.map((i) => ({
       id: i.id,
@@ -459,19 +459,17 @@ function monthIndex(monthStr: string): number {
 async function getPnl(year: number, locationId?: string) {
   const locFilter = locationId ? { locationId } : {};
 
-  // Revenue from receipts (SALE type) grouped by month
-  const yearStart = new Date(year, 0, 1);
-  const yearEnd = new Date(year, 11, 31, 23, 59, 59, 999);
-
-  const receipts = await prisma.receipt.findMany({
-    where: { ...locFilter, date: { gte: yearStart, lte: yearEnd }, type: "SALE" },
-    select: { date: true, amount: true },
+  // Revenue from DailyIncome grouped by month
+  const dailyIncomes = await prisma.dailyIncome.findMany({
+    where: { ...locFilter, year },
+    select: { month: true, totalSales: true },
   });
 
   const income = zeros();
-  for (const r of receipts) {
-    const m = new Date(r.date).getMonth();
-    income[m] += r.amount;
+  for (const d of dailyIncomes) {
+    if (d.month >= 1 && d.month <= 12) {
+      income[d.month - 1] += d.totalSales;
+    }
   }
 
   // Incoming invoices for the year grouped by plCategory + category + month
@@ -541,25 +539,22 @@ async function getPnl(year: number, locationId?: string) {
 // ── Cash Flow Detail ─────────────────────────────────────
 async function getCashFlowDetail(year: number, locationId?: string) {
   const locFilter = locationId ? { locationId } : {};
-  const yearStart = new Date(year, 0, 1);
-  const yearEnd = new Date(year, 11, 31, 23, 59, 59, 999);
 
-  // Inflows: receipts by payment method and month
-  const receipts = await prisma.receipt.findMany({
-    where: { ...locFilter, date: { gte: yearStart, lte: yearEnd }, type: "SALE" },
-    select: { date: true, amount: true, paymentMethod: true },
+  // Inflows: DailyIncome by payment method and month
+  const dailyIncomes = await prisma.dailyIncome.findMany({
+    where: { ...locFilter, year },
+    select: { month: true, cashAmount: true, cardAmount: true, transferAmount: true },
   });
 
   const cashSales = zeros();
   const cardSales = zeros();
   const transferSales = zeros();
-  for (const r of receipts) {
-    const m = new Date(r.date).getMonth();
-    switch (r.paymentMethod) {
-      case "CASH": cashSales[m] += r.amount; break;
-      case "CARD": cardSales[m] += r.amount; break;
-      case "TRANSFER": transferSales[m] += r.amount; break;
-      default: cashSales[m] += r.amount;
+  for (const d of dailyIncomes) {
+    if (d.month >= 1 && d.month <= 12) {
+      const m = d.month - 1;
+      cashSales[m] += d.cashAmount;
+      cardSales[m] += d.cardAmount;
+      transferSales[m] += d.transferAmount;
     }
   }
 
@@ -637,8 +632,6 @@ async function getCashFlowDetail(year: number, locationId?: string) {
 // ── COGS Detail ──────────────────────────────────────────
 async function getCogsDetail(year: number, locationId?: string) {
   const locFilter = locationId ? { locationId } : {};
-  const yearStart = new Date(year, 0, 1);
-  const yearEnd = new Date(year, 11, 31, 23, 59, 59, 999);
 
   // COGS invoices grouped by category and month
   const cogsInvoices = await prisma.incomingInvoice.findMany({
@@ -669,16 +662,17 @@ async function getCogsDetail(year: number, locationId?: string) {
     supplierTotals[inv.supplierId].monthly[m] += inv.totalAmount;
   }
 
-  // Revenue for COGS % calculation
-  const receipts = await prisma.receipt.findMany({
-    where: { ...locFilter, date: { gte: yearStart, lte: yearEnd }, type: "SALE" },
-    select: { date: true, amount: true },
+  // Revenue for COGS % calculation from DailyIncome
+  const dailyIncomesForCogs = await prisma.dailyIncome.findMany({
+    where: { ...locFilter, year },
+    select: { month: true, totalSales: true },
   });
 
   const revenue = zeros();
-  for (const r of receipts) {
-    const m = new Date(r.date).getMonth();
-    revenue[m] += r.amount;
+  for (const d of dailyIncomesForCogs) {
+    if (d.month >= 1 && d.month <= 12) {
+      revenue[d.month - 1] += d.totalSales;
+    }
   }
 
   const cogsPercent = revenue.map((v, i) => (v > 0 ? (totalCogs[i] / v) * 100 : 0));

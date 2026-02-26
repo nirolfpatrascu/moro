@@ -182,11 +182,16 @@ export async function POST(request: NextRequest) {
         const category = String(row.category ?? "").trim().toUpperCase() || "NA";
         const subcategory = row.subcategory ? String(row.subcategory).trim() : "NA";
 
-        // Amounts
-        const totalAmount = Number(row.totalAmount) || 0;
+        // Amounts — calculate missing values from available ones
+        let totalAmount = Number(row.totalAmount) || 0;
         let amountExVat = Number(row.amountExVat) || 0;
         let vatAmount = Number(row.vatAmount) || 0;
 
+        // If total is 0 but components exist, calculate total
+        if (totalAmount === 0 && (amountExVat > 0 || vatAmount > 0)) {
+          totalAmount = amountExVat + vatAmount;
+        }
+        // If total exists but components are 0, calculate them
         if (amountExVat === 0 && vatAmount === 0 && totalAmount > 0) {
           const vatRate = 0.19;
           amountExVat = +(totalAmount / (1 + vatRate)).toFixed(2);
