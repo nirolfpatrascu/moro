@@ -1,5 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { MONTHS_RO } from "@/lib/utils";
+
+// ── Category constants for P&L breakdown ──────────────────
+const COGS_CATS = ["BAR", "BUCATARIE", "CONSUMABILE", "TRANSPORT", "LIVRARE", "DIVERSE"];
+const PEOPLE_CATS = ["SALARII", "COLABORATORI", "TAXE SALARIU", "TICHETE MASA", "BONUSURI", "UNIFORME", "TRAINING"];
+const OPEX_CATS = ["LICENTE", "CONSULTING", "CONTABILITATE", "AUTORIZATII", "MARKETING", "DIVERSE", "INVENTAR OBIECTE"];
+const COSTFIX_CATS = ["CHIRII", "UTILITATI", "BANCA", "DIVERSE"];
+const TAXE_CATS = ["IMPOZIT VENIT", "TVA", "ALTE TAXE"];
 
 /**
  * GET /api/dashboard?type=summary|cashflow|by-location|by-category|aging|recent|alerts
@@ -32,6 +40,18 @@ export async function GET(request: NextRequest) {
         return NextResponse.json(await getAlerts());
       case "top-suppliers":
         return NextResponse.json(await getTopSuppliers(from, to, locationId));
+      case "pnl": {
+        const year = parseInt(searchParams.get("year") || String(new Date().getFullYear()));
+        return NextResponse.json(await getPnl(year, locationId));
+      }
+      case "cashflow-detail": {
+        const year = parseInt(searchParams.get("year") || String(new Date().getFullYear()));
+        return NextResponse.json(await getCashFlowDetail(year, locationId));
+      }
+      case "cogs-detail": {
+        const year = parseInt(searchParams.get("year") || String(new Date().getFullYear()));
+        return NextResponse.json(await getCogsDetail(year, locationId));
+      }
       default:
         return NextResponse.json({ error: "Tip necunoscut" }, { status: 400 });
     }
@@ -423,4 +443,277 @@ async function getTopSuppliers(from: Date, to: Date, locationId?: string) {
     amount: g._sum.totalAmount || 0,
     count: g._count,
   }));
+}
+
+// ── Helper: zero-filled 12-element array ─────────────────
+function zeros(): number[] {
+  return new Array(12).fill(0);
+}
+
+function monthIndex(monthStr: string): number {
+  const idx = MONTHS_RO.indexOf(monthStr.toUpperCase() as typeof MONTHS_RO[number]);
+  return idx >= 0 ? idx : -1;
+}
+
+// ── P&L Detail ───────────────────────────────────────────
+async function getPnl(year: number, locationId?: string) {
+  const locFilter = locationId ? { locationId } : {};
+
+  // Revenue from receipts (SALE type) grouped by month
+  const yearStart = new Date(year, 0, 1);
+  const yearEnd = new Date(year, 11, 31, 23, 59, 59, 999);
+
+  const receipts = await prisma.receipt.findMany({
+    where: { ...locFilter, date: { gte: yearStart, lte: yearEnd }, type: "SALE" },
+    select: { date: true, amount: true },
+  });
+
+  const income = zeros();
+  for (const r of receipts) {
+    const m = new Date(r.date).getMonth();
+    income[m] += r.amount;
+  }
+
+  // Incoming invoices for the year grouped by plCategory + category + month
+  const invoices = await prisma.incomingInvoice.findMany({
+    where: { ...locFilter, year },
+    select: { month: true, plCategory: true, category: true, totalAmount: true },
+  });
+
+  // Build category breakdowns
+  type CatMap = Record<string, number[]>;
+  const buildCatMap = (plCat: string, cats: string[]): CatMap => {
+    const map: CatMap = {};
+    for (const c of cats) map[c] = zeros();
+    map.total = zeros();
+    for (const inv of invoices) {
+      if (inv.plCategory !== plCat) continue;
+      const m = monthIndex(inv.month);
+      if (m < 0) continue;
+      const cat = inv.category.toUpperCase();
+      if (!map[cat]) map[cat] = zeros();
+      map[cat][m] += inv.totalAmount;
+      map.total[m] += inv.totalAmount;
+    }
+    return map;
+  };
+
+  const cogs = buildCatMap("COGS", COGS_CATS);
+  const people = buildCatMap("PEOPLE", PEOPLE_CATS);
+  const opex = buildCatMap("OPEX", OPEX_CATS);
+  const costfix = buildCatMap("COSTFIX", COSTFIX_CATS);
+  const taxe = buildCatMap("TAXE", TAXE_CATS);
+
+  // Computed metrics
+  const grossProfit = income.map((v, i) => v - cogs.total[i]);
+  const operatingProfit = grossProfit.map((v, i) => v - people.total[i] - opex.total[i] - costfix.total[i]);
+  const netProfit = operatingProfit.map((v, i) => v - taxe.total[i]);
+  const grossMargin = income.map((v, i) => (v > 0 ? ((grossProfit[i] / v) * 100) : 0));
+  const operatingMargin = income.map((v, i) => (v > 0 ? ((operatingProfit[i] / v) * 100) : 0));
+  const netMargin = income.map((v, i) => (v > 0 ? ((netProfit[i] / v) * 100) : 0));
+
+  const sum = (arr: number[]) => arr.reduce((a, b) => a + b, 0);
+  const totalIncome = sum(income);
+  const totalExpenses = sum(cogs.total) + sum(people.total) + sum(opex.total) + sum(costfix.total) + sum(taxe.total);
+
+  return {
+    income,
+    cogs,
+    people,
+    opex,
+    costfix,
+    taxe,
+    grossProfit,
+    operatingProfit,
+    netProfit,
+    grossMargin,
+    operatingMargin,
+    netMargin,
+    totals: {
+      income: totalIncome,
+      expenses: totalExpenses,
+      netProfit: sum(netProfit),
+      netMargin: totalIncome > 0 ? (sum(netProfit) / totalIncome) * 100 : 0,
+    },
+  };
+}
+
+// ── Cash Flow Detail ─────────────────────────────────────
+async function getCashFlowDetail(year: number, locationId?: string) {
+  const locFilter = locationId ? { locationId } : {};
+  const yearStart = new Date(year, 0, 1);
+  const yearEnd = new Date(year, 11, 31, 23, 59, 59, 999);
+
+  // Inflows: receipts by payment method and month
+  const receipts = await prisma.receipt.findMany({
+    where: { ...locFilter, date: { gte: yearStart, lte: yearEnd }, type: "SALE" },
+    select: { date: true, amount: true, paymentMethod: true },
+  });
+
+  const cashSales = zeros();
+  const cardSales = zeros();
+  const transferSales = zeros();
+  for (const r of receipts) {
+    const m = new Date(r.date).getMonth();
+    switch (r.paymentMethod) {
+      case "CASH": cashSales[m] += r.amount; break;
+      case "CARD": cardSales[m] += r.amount; break;
+      case "TRANSFER": transferSales[m] += r.amount; break;
+      default: cashSales[m] += r.amount;
+    }
+  }
+
+  // Inflows: outgoing invoice collections (cash basis)
+  const outgoingInvoices = await prisma.outgoingInvoice.findMany({
+    where: {
+      ...(locationId ? { locationId } : {}),
+      paymentYear: year,
+      paidAmount: { gt: 0 },
+    },
+    select: { paymentMonth: true, paidAmount: true },
+  });
+
+  const invoiceCollections = zeros();
+  for (const inv of outgoingInvoices) {
+    if (inv.paymentMonth) {
+      const m = monthIndex(inv.paymentMonth);
+      if (m >= 0) invoiceCollections[m] += inv.paidAmount;
+    }
+  }
+
+  const totalInflows = zeros().map((_, i) => cashSales[i] + cardSales[i] + transferSales[i] + invoiceCollections[i]);
+
+  // Outflows: incoming invoices paid (cash basis) grouped by plCategory
+  const paidInvoices = await prisma.incomingInvoice.findMany({
+    where: {
+      ...locFilter,
+      paymentYear: year,
+      paidAmount: { gt: 0 },
+    },
+    select: { paymentMonth: true, paidAmount: true, plCategory: true },
+  });
+
+  const outCogs = zeros();
+  const outPeople = zeros();
+  const outOpex = zeros();
+  const outCostfix = zeros();
+  const outTaxe = zeros();
+  for (const inv of paidInvoices) {
+    if (!inv.paymentMonth) continue;
+    const m = monthIndex(inv.paymentMonth);
+    if (m < 0) continue;
+    switch (inv.plCategory) {
+      case "COGS": outCogs[m] += inv.paidAmount; break;
+      case "PEOPLE": outPeople[m] += inv.paidAmount; break;
+      case "OPEX": outOpex[m] += inv.paidAmount; break;
+      case "COSTFIX": outCostfix[m] += inv.paidAmount; break;
+      case "TAXE": outTaxe[m] += inv.paidAmount; break;
+    }
+  }
+
+  const totalOutflows = zeros().map((_, i) => outCogs[i] + outPeople[i] + outOpex[i] + outCostfix[i] + outTaxe[i]);
+  const netCashFlow = totalInflows.map((v, i) => v - totalOutflows[i]);
+  const cumulativeCashFlow = zeros();
+  netCashFlow.forEach((v, i) => {
+    cumulativeCashFlow[i] = (i > 0 ? cumulativeCashFlow[i - 1] : 0) + v;
+  });
+
+  const sum = (arr: number[]) => arr.reduce((a, b) => a + b, 0);
+
+  return {
+    inflows: { cashSales, cardSales, transferSales, invoiceCollections, totalInflows },
+    outflows: { cogs: outCogs, people: outPeople, opex: outOpex, costfix: outCostfix, taxe: outTaxe, totalOutflows },
+    netCashFlow,
+    cumulativeCashFlow,
+    totals: {
+      inflows: sum(totalInflows),
+      outflows: sum(totalOutflows),
+      net: sum(netCashFlow),
+      monthlyAvg: sum(netCashFlow) / 12,
+    },
+  };
+}
+
+// ── COGS Detail ──────────────────────────────────────────
+async function getCogsDetail(year: number, locationId?: string) {
+  const locFilter = locationId ? { locationId } : {};
+  const yearStart = new Date(year, 0, 1);
+  const yearEnd = new Date(year, 11, 31, 23, 59, 59, 999);
+
+  // COGS invoices grouped by category and month
+  const cogsInvoices = await prisma.incomingInvoice.findMany({
+    where: { ...locFilter, year, plCategory: "COGS" },
+    select: { month: true, category: true, totalAmount: true, supplierId: true },
+  });
+
+  const categories: Record<string, number[]> = {};
+  for (const cat of COGS_CATS) categories[cat] = zeros();
+  const totalCogs = zeros();
+
+  // Also track suppliers
+  const supplierTotals: Record<string, { total: number; monthly: number[] }> = {};
+
+  for (const inv of cogsInvoices) {
+    const m = monthIndex(inv.month);
+    if (m < 0) continue;
+    const cat = inv.category.toUpperCase();
+    if (!categories[cat]) categories[cat] = zeros();
+    categories[cat][m] += inv.totalAmount;
+    totalCogs[m] += inv.totalAmount;
+
+    // Track supplier
+    if (!supplierTotals[inv.supplierId]) {
+      supplierTotals[inv.supplierId] = { total: 0, monthly: zeros() };
+    }
+    supplierTotals[inv.supplierId].total += inv.totalAmount;
+    supplierTotals[inv.supplierId].monthly[m] += inv.totalAmount;
+  }
+
+  // Revenue for COGS % calculation
+  const receipts = await prisma.receipt.findMany({
+    where: { ...locFilter, date: { gte: yearStart, lte: yearEnd }, type: "SALE" },
+    select: { date: true, amount: true },
+  });
+
+  const revenue = zeros();
+  for (const r of receipts) {
+    const m = new Date(r.date).getMonth();
+    revenue[m] += r.amount;
+  }
+
+  const cogsPercent = revenue.map((v, i) => (v > 0 ? (totalCogs[i] / v) * 100 : 0));
+
+  // Top 10 suppliers
+  const topSupplierIds = Object.entries(supplierTotals)
+    .sort((a, b) => b[1].total - a[1].total)
+    .slice(0, 10)
+    .map(([id]) => id);
+
+  const supplierNames = await prisma.supplier.findMany({
+    where: { id: { in: topSupplierIds } },
+    select: { id: true, name: true },
+  });
+  const nameMap = new Map(supplierNames.map((s) => [s.id, s.name]));
+
+  const topSuppliers = topSupplierIds.map((id) => ({
+    name: nameMap.get(id) || "Necunoscut",
+    total: supplierTotals[id].total,
+    monthly: supplierTotals[id].monthly,
+  }));
+
+  const sum = (arr: number[]) => arr.reduce((a, b) => a + b, 0);
+
+  return {
+    categories,
+    totalCogs,
+    revenue,
+    cogsPercent,
+    topSuppliers,
+    totals: {
+      cogs: sum(totalCogs),
+      revenue: sum(revenue),
+      cogsPercent: sum(revenue) > 0 ? (sum(totalCogs) / sum(revenue)) * 100 : 0,
+      monthlyAvgCogs: sum(totalCogs) / 12,
+    },
+  };
 }
