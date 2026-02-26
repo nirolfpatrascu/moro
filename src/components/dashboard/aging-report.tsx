@@ -30,7 +30,7 @@ export function AgingReport({
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="justify-center">
         <CardTitle>Aging — Plati & Incasari Restante</CardTitle>
       </CardHeader>
       <CardContent>

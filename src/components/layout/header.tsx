@@ -27,11 +27,14 @@ export function Header() {
   const title = pageTitles[pathname] ?? "Moro";
 
   return (
-    <header className="sticky top-0 z-20 flex h-14 items-center justify-between border-b border-[#E8DDD0] bg-white/80 px-4 backdrop-blur-sm lg:px-6">
+    <header className="sticky top-0 z-20 flex h-14 items-center border-b border-[#E8DDD0] bg-white/80 px-4 backdrop-blur-sm lg:px-6">
       <div className="flex items-center gap-3 pl-12 lg:pl-0">
-        <h1 className="text-sm font-semibold text-[#2D1B0E]">{title}</h1>
+        {/* Spacer to balance the right side */}
       </div>
-      <div className="flex items-center gap-3">
+      <div className="absolute inset-x-0 flex items-center justify-center pointer-events-none">
+        <h1 className="text-lg font-bold text-[#2D1B0E]">{title}</h1>
+      </div>
+      <div className="ml-auto flex items-center gap-3">
         <SearchCommand />
         <Link
           href="/settings"

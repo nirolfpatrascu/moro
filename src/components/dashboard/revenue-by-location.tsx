@@ -31,7 +31,7 @@ export function RevenueByLocation({
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="justify-center">
         <CardTitle>Venituri vs Cheltuieli per Locatie</CardTitle>
       </CardHeader>
       <CardContent>

@@ -158,10 +158,7 @@ export default function DashboardPage() {
     fetchDashboard();
   }, [fetchDashboard]);
 
-  useEffect(() => {
-    const interval = setInterval(fetchDashboard, 60000);
-    return () => clearInterval(interval);
-  }, [fetchDashboard]);
+  // Manual refresh only — no auto-refresh interval
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -176,7 +173,7 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-12">
       {/* Greeting Card */}
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#5C3D2E] via-[#6F4E37] to-[#C4A882] p-10 text-white shadow-xl">
         {/* Decorative background elements */}
@@ -207,21 +204,15 @@ export default function DashboardPage() {
           Sumar general &mdash; {periodLabels[period]}
         </p>
         <div className="flex flex-wrap items-center gap-2">
-          <div className="flex rounded-lg bg-gray-100 p-0.5">
+          <select
+            value={period}
+            onChange={(e) => setPeriod(e.target.value as Period)}
+            className="h-8 rounded-lg border border-gray-200 bg-white px-2 text-xs"
+          >
             {(["month", "quarter", "year"] as Period[]).map((p) => (
-              <button
-                key={p}
-                onClick={() => setPeriod(p)}
-                className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-                  period === p
-                    ? "bg-white text-[#2D1B0E] shadow-sm"
-                    : "text-[#9B8B7F] hover:text-[#2D1B0E]"
-                }`}
-              >
-                {periodLabels[p]}
-              </button>
+              <option key={p} value={p}>{periodLabels[p]}</option>
             ))}
-          </div>
+          </select>
 
           <select
             value={locationId}

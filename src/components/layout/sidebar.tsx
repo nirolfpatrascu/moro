@@ -70,7 +70,7 @@ export function Sidebar() {
         )}
       >
         {/* Logo */}
-        <div className="flex h-14 items-center gap-3 border-b border-white/10 px-3">
+        <div className="flex h-14 items-center justify-center gap-3 border-b border-white/10 px-3">
           <Coffee className="h-6 w-6 text-white" />
           <span className="text-lg font-bold text-white">Moro</span>
         </div>
@@ -81,7 +81,7 @@ export function Sidebar() {
             {navItems.map((item, i) => {
               if ("type" in item && item.type === "separator") {
                 return (
-                  <li key={i} className="mt-4 mb-1.5 px-3">
+                  <li key={i} className="mt-4 mb-1.5 px-3 text-center">
                     <span className="text-[10px] font-semibold uppercase tracking-wider text-white/40">
                       {item.label}
                     </span>
@@ -102,7 +102,7 @@ export function Sidebar() {
                     href={item.href}
                     onClick={() => setOpen(false)}
                     className={cn(
-                      "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                      "flex items-center justify-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                       isActive
                         ? "bg-white/15 text-white"
                         : "text-white/70 hover:bg-white/10 hover:text-white"
@@ -118,7 +118,7 @@ export function Sidebar() {
         </nav>
 
         {/* Footer */}
-        <div className="border-t border-white/10 px-3 py-3">
+        <div className="border-t border-white/10 px-3 py-3 text-center">
           <p className="text-[11px] text-white/40">Moro Coffee Manager</p>
           <p className="text-[10px] text-white/30">v0.1.0</p>
         </div>

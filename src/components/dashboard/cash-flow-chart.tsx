@@ -33,7 +33,7 @@ export function CashFlowChart({
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="justify-center">
         <CardTitle>Cash Flow (12 luni)</CardTitle>
       </CardHeader>
       <CardContent>

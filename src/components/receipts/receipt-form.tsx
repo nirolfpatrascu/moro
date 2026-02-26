@@ -53,10 +53,9 @@ export function ReceiptFormModal({
   onSuccess,
   defaultLocationId,
 }: Props) {
-  const today = new Date().toISOString().split("T")[0];
-  const emptyForm: FormState = {
+  const [form, setForm] = useState<FormState>({
     locationId: defaultLocationId || "",
-    date: today,
+    date: new Date().toISOString().split("T")[0],
     type: "SALE",
     description: "",
     category: "",
@@ -64,9 +63,7 @@ export function ReceiptFormModal({
     paymentMethod: "CASH",
     receiptNumber: "",
     notes: "",
-  };
-
-  const [form, setForm] = useState<FormState>(emptyForm);
+  });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [quickMode, setQuickMode] = useState(false);
@@ -75,6 +72,7 @@ export function ReceiptFormModal({
   const isEdit = !!receipt?.id;
 
   useEffect(() => {
+    const today = new Date().toISOString().split("T")[0];
     if (receipt) {
       setForm({
         locationId: receipt.locationId || receipt.location?.id || "",
@@ -89,10 +87,21 @@ export function ReceiptFormModal({
       });
       setQuickMode(false);
     } else {
-      setForm({ ...emptyForm, locationId: defaultLocationId || "" });
+      setForm({
+        locationId: defaultLocationId || "",
+        date: today,
+        type: "SALE",
+        description: "",
+        category: "",
+        amount: "",
+        paymentMethod: "CASH",
+        receiptNumber: "",
+        notes: "",
+      });
     }
     setErrors({});
-  }, [receipt, open, defaultLocationId, today, emptyForm]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [receipt, open, defaultLocationId]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
@@ -119,7 +128,7 @@ export function ReceiptFormModal({
     try {
       const payload = {
         locationId: form.locationId,
-        date: form.date || today,
+        date: form.date || new Date().toISOString().split("T")[0],
         type: form.type,
         amount: parseFloat(form.amount) || 0,
         paymentMethod: form.paymentMethod,

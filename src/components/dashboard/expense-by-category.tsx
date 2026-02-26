@@ -32,7 +32,7 @@ export function ExpenseByCategory({
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="justify-center">
         <CardTitle>Cheltuieli per Categorie P&L</CardTitle>
       </CardHeader>
       <CardContent>

@@ -33,7 +33,7 @@ export function OverdueAlerts({
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="justify-center">
         <CardTitle className="flex items-center gap-2">
           Alerte
           {data.totalOverdue > 0 && (

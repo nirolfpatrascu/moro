@@ -33,7 +33,7 @@ export function RecentTransactions({
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="justify-center">
         <CardTitle>Tranzactii Recente</CardTitle>
       </CardHeader>
       <CardContent>

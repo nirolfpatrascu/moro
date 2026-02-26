@@ -267,13 +267,13 @@ export default function IncomePage() {
         <CardContent>
           <div className="flex flex-wrap items-center gap-3">
             <div className="relative flex-1 min-w-[200px]">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted" />
+              <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted" />
               <input
                 type="text"
                 placeholder="Cauta dupa descriere, nr. bon, categorie..."
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
-                className="h-10 w-full rounded-lg border border-border bg-surface pl-10 pr-3 text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary/50"
+                className="h-10 w-full rounded-lg border border-border bg-surface pl-3 pr-10 text-sm text-right text-text placeholder:text-right placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary/50"
               />
             </div>
             <Button
@@ -394,9 +394,9 @@ export default function IncomePage() {
                 <th className="px-4 py-3 text-right font-medium text-text-secondary">Actiuni</th>
               </tr>
             </thead>
-            <tbody>
-              {loading ? (
-                Array.from({ length: 5 }).map((_, i) => (
+            {loading ? (
+              <tbody>
+                {Array.from({ length: 5 }).map((_, i) => (
                   <tr key={i} className="border-b border-border-light">
                     {Array.from({ length: 7 }).map((_, j) => (
                       <td key={j} className="px-4 py-3">
@@ -404,8 +404,10 @@ export default function IncomePage() {
                       </td>
                     ))}
                   </tr>
-                ))
-              ) : receipts.length === 0 ? (
+                ))}
+              </tbody>
+            ) : receipts.length === 0 ? (
+              <tbody>
                 <tr>
                   <td colSpan={7} className="px-4 py-12 text-center">
                     <Receipt className="mx-auto mb-3 h-12 w-12 text-border" />
@@ -415,95 +417,95 @@ export default function IncomePage() {
                     </p>
                   </td>
                 </tr>
-              ) : (
-                sortedDates.map((dateKey) => {
-                  const dayReceipts = receipts.filter(
-                    (r) => new Date(r.date).toISOString().split("T")[0] === dateKey
-                  );
-                  const totals = dailyTotals[dateKey];
+              </tbody>
+            ) : (
+              sortedDates.map((dateKey) => {
+                const dayReceipts = receipts.filter(
+                  (r) => new Date(r.date).toISOString().split("T")[0] === dateKey
+                );
+                const totals = dailyTotals[dateKey];
 
-                  return (
-                    <tbody key={dateKey}>
-                      {dayReceipts.map((r) => {
-                        const typeInfo = TYPE_BADGE[r.type] || TYPE_BADGE.SALE;
-                        return (
-                          <tr
-                            key={r.id}
-                            className="border-b border-border-light last:border-0 transition-colors hover:bg-surface-hover"
-                          >
-                            <td className="px-4 py-3 text-text-secondary">
-                              {new Date(r.date).toLocaleDateString("ro-RO")}
-                            </td>
-                            <td className="px-4 py-3">
-                              <Badge variant={typeInfo.variant}>{typeInfo.label}</Badge>
-                            </td>
-                            <td className="px-4 py-3 text-text-secondary max-w-[200px] truncate">
-                              {r.description || r.category || "-"}
-                            </td>
-                            <td className="px-4 py-3 text-center">
-                              <Badge variant="outline">{PAYMENT_BADGE[r.paymentMethod] || r.paymentMethod}</Badge>
-                            </td>
-                            <td className="px-4 py-3 text-center">
-                              <Badge variant="outline">{r.location.code}</Badge>
-                            </td>
-                            <td className="px-4 py-3 text-right font-medium text-text">
-                              {r.type === "REFUND" || r.type === "EXPENSE" ? "-" : ""}
-                              {formatCurrency(r.amount)}
-                            </td>
-                            <td className="px-4 py-3">
-                              <div className="flex items-center justify-end gap-1">
-                                <button
-                                  onClick={() => setDetailReceipt(r)}
-                                  className="rounded p-1.5 text-text-muted hover:bg-surface-hover hover:text-text"
-                                  title="Detalii"
-                                >
-                                  <Eye className="h-4 w-4" />
-                                </button>
-                                <button
-                                  onClick={() => { setEditingReceipt(r); setFormOpen(true); }}
-                                  className="rounded p-1.5 text-text-muted hover:bg-surface-hover hover:text-primary"
-                                  title="Editeaza"
-                                >
-                                  <Pencil className="h-4 w-4" />
-                                </button>
-                                <button
-                                  onClick={() => setDeleteTarget(r)}
-                                  className="rounded p-1.5 text-text-muted hover:bg-danger-light hover:text-danger"
-                                  title="Sterge"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                      {/* Daily totals row */}
-                      {totals && (
-                        <tr className="bg-background/60 border-b-2 border-border">
-                          <td className="px-4 py-2 text-xs font-semibold text-text-muted">
-                            Total {new Date(dateKey).toLocaleDateString("ro-RO")}
+                return (
+                  <tbody key={dateKey}>
+                    {dayReceipts.map((r) => {
+                      const typeInfo = TYPE_BADGE[r.type] || TYPE_BADGE.SALE;
+                      return (
+                        <tr
+                          key={r.id}
+                          className="border-b border-border-light last:border-0 transition-colors hover:bg-surface-hover"
+                        >
+                          <td className="px-4 py-3 text-text-secondary">
+                            {new Date(r.date).toLocaleDateString("ro-RO")}
                           </td>
-                          <td colSpan={4} className="px-4 py-2 text-xs text-text-muted">
-                            <span className="text-success">{formatCurrency(totals.sales)} vanzari</span>
-                            {totals.refunds > 0 && (
-                              <span className="ml-3 text-warning">-{formatCurrency(totals.refunds)} retururi</span>
-                            )}
-                            {totals.expenses > 0 && (
-                              <span className="ml-3 text-danger">-{formatCurrency(totals.expenses)} cheltuieli</span>
-                            )}
+                          <td className="px-4 py-3">
+                            <Badge variant={typeInfo.variant}>{typeInfo.label}</Badge>
                           </td>
-                          <td className="px-4 py-2 text-right text-xs font-bold text-text">
-                            Net: {formatCurrency(totals.net)}
+                          <td className="px-4 py-3 text-text-secondary max-w-[200px] truncate">
+                            {r.description || r.category || "-"}
                           </td>
-                          <td />
+                          <td className="px-4 py-3 text-center">
+                            <Badge variant="outline">{PAYMENT_BADGE[r.paymentMethod] || r.paymentMethod}</Badge>
+                          </td>
+                          <td className="px-4 py-3 text-center">
+                            <Badge variant="outline">{r.location.code}</Badge>
+                          </td>
+                          <td className="px-4 py-3 text-right font-medium text-text">
+                            {r.type === "REFUND" || r.type === "EXPENSE" ? "-" : ""}
+                            {formatCurrency(r.amount)}
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center justify-end gap-1">
+                              <button
+                                onClick={() => setDetailReceipt(r)}
+                                className="rounded p-1.5 text-text-muted hover:bg-surface-hover hover:text-text"
+                                title="Detalii"
+                              >
+                                <Eye className="h-4 w-4" />
+                              </button>
+                              <button
+                                onClick={() => { setEditingReceipt(r); setFormOpen(true); }}
+                                className="rounded p-1.5 text-text-muted hover:bg-surface-hover hover:text-primary"
+                                title="Editeaza"
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </button>
+                              <button
+                                onClick={() => setDeleteTarget(r)}
+                                className="rounded p-1.5 text-text-muted hover:bg-danger-light hover:text-danger"
+                                title="Sterge"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </div>
+                          </td>
                         </tr>
-                      )}
-                    </tbody>
-                  );
-                })
-              )}
-            </tbody>
+                      );
+                    })}
+                    {/* Daily totals row */}
+                    {totals && (
+                      <tr className="bg-background/60 border-b-2 border-border">
+                        <td className="px-4 py-2 text-xs font-semibold text-text-muted">
+                          Total {new Date(dateKey).toLocaleDateString("ro-RO")}
+                        </td>
+                        <td colSpan={4} className="px-4 py-2 text-xs text-text-muted">
+                          <span className="text-success">{formatCurrency(totals.sales)} vanzari</span>
+                          {totals.refunds > 0 && (
+                            <span className="ml-3 text-warning">-{formatCurrency(totals.refunds)} retururi</span>
+                          )}
+                          {totals.expenses > 0 && (
+                            <span className="ml-3 text-danger">-{formatCurrency(totals.expenses)} cheltuieli</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-2 text-right text-xs font-bold text-text">
+                          Net: {formatCurrency(totals.net)}
+                        </td>
+                        <td />
+                      </tr>
+                    )}
+                  </tbody>
+                );
+              })
+            )}
           </table>
         </div>
 

@@ -43,7 +43,7 @@ export function TopSuppliers({
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="justify-center">
         <CardTitle>Top Furnizori</CardTitle>
       </CardHeader>
       <CardContent>
