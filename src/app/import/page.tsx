@@ -639,7 +639,9 @@ export default function ImportPage() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle>
-                  Previzualizare ({state.previewRows.length} randuri)
+                  Previzualizare {isIncome
+                    ? `(primele ${state.previewRows.length} randuri din ${currentSheet?.rowCount ?? "?"} total)`
+                    : `(${state.previewRows.length} randuri)`}
                 </CardTitle>
                 {/* Sheet selector for income */}
                 {isIncome && state.sheets.length > 1 && (
@@ -802,7 +804,7 @@ export default function ImportPage() {
                 >
                   <Upload className="h-4 w-4" />
                   Importa {state.previewRows.length > 0
-                    ? `${isIncome ? state.previewRows.length + " randuri" : (currentSheet?.rowCount ?? 0) + " randuri"}`
+                    ? `${(currentSheet?.rowCount ?? state.previewRows.length)} randuri`
                     : ""}
                 </Button>
               </div>
