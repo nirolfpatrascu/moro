@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { StatCard } from "@/components/ui";
 import { StatCardSkeleton } from "@/components/dashboard/skeleton";
 import { CashFlowChart } from "@/components/dashboard/cash-flow-chart";
@@ -77,10 +77,15 @@ export default function DashboardPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
 
-  const motivationalMessage = useMemo(
-    () => MOTIVATIONAL_MESSAGES[Math.floor(Math.random() * MOTIVATIONAL_MESSAGES.length)],
-    []
-  );
+  const [motivationalMessage, setMotivationalMessage] = useState("");
+  const [greeting, setGreeting] = useState("");
+
+  useEffect(() => {
+    setMotivationalMessage(
+      MOTIVATIONAL_MESSAGES[Math.floor(Math.random() * MOTIVATIONAL_MESSAGES.length)]
+    );
+    setGreeting(getGreeting());
+  }, []);
 
   // Data states
   const [summary, setSummary] = useState<Record<string, number> | null>(null);
@@ -171,32 +176,34 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Greeting Card */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#5C3D2E] via-[#6F4E37] to-[#C4A882] p-8 text-white shadow-xl">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#5C3D2E] via-[#6F4E37] to-[#C4A882] p-10 text-white shadow-xl">
         {/* Decorative background elements */}
-        <div className="absolute -right-6 -top-6 h-32 w-32 rounded-full bg-white/5" />
-        <div className="absolute -bottom-4 -right-4 h-24 w-24 rounded-full bg-white/5" />
-        <div className="absolute bottom-6 right-8 text-6xl opacity-10">&#9749;</div>
+        <div className="absolute -right-6 -top-6 h-40 w-40 rounded-full bg-white/5" />
+        <div className="absolute -bottom-4 -right-4 h-28 w-28 rounded-full bg-white/5" />
+        <div className="absolute bottom-8 right-10 text-7xl opacity-10">&#9749;</div>
 
-        <div className="relative flex items-start gap-5">
-          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/15 text-2xl backdrop-blur-sm">
+        <div className="relative flex items-start gap-6">
+          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-white/15 text-3xl backdrop-blur-sm">
             &#9749;
           </div>
           <div className="min-w-0 flex-1">
-            <h2 className="text-2xl font-bold tracking-tight">
-              {getGreeting()}, Moro! &#9749;
+            <h2 className="text-3xl font-extrabold tracking-tight drop-shadow-sm">
+              {greeting ? `${greeting}, Moro!` : "Bun venit, Moro!"} &#9749;
             </h2>
-            <p className="mt-2 text-base leading-relaxed text-white/80">
-              {motivationalMessage}
-            </p>
+            {motivationalMessage && (
+              <p className="mt-3 text-lg leading-relaxed text-white/85">
+                {motivationalMessage}
+              </p>
+            )}
           </div>
         </div>
       </div>
 
       {/* Filters row */}
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <p className="text-xs text-[#9B8B7F]">
+        <p className="text-sm font-medium text-[#6B5B4F]">
           Sumar general &mdash; {periodLabels[period]}
         </p>
         <div className="flex flex-wrap items-center gap-2">
@@ -243,7 +250,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Row 1: Stat Cards */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
         {loadingSummary || !summary ? (
           <>
             <StatCardSkeleton />
@@ -296,19 +303,19 @@ export default function DashboardPage() {
       <CashFlowChart data={cashflow} loading={loadingCharts} />
 
       {/* Row 3: Revenue by Location + Expense by Category */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
         <RevenueByLocation data={byLocation} loading={loadingCharts} />
         <ExpenseByCategory data={byCategory} loading={loadingCharts} />
       </div>
 
       {/* Row 4: Aging + Top Suppliers */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
         <AgingReport data={aging} loading={loadingCharts} />
         <TopSuppliers data={topSuppliers} loading={loadingCharts} />
       </div>
 
       {/* Row 5: Recent Transactions + Alerts */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
         <RecentTransactions data={recent} loading={loadingFeed} />
         <OverdueAlerts data={alerts} loading={loadingSummary} />
       </div>
