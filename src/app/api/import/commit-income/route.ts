@@ -45,89 +45,79 @@ export async function POST(request: NextRequest) {
     let errorCount = 0;
     const importErrors: { row: number; message: string }[] = [...parseErrors];
 
-    // Process rows in batches within a transaction
-    await prisma.$transaction(async (tx) => {
-      for (let i = 0; i < rows.length; i++) {
-        const row = rows[i];
+    // Process rows individually with upsert (no wrapping transaction to avoid timeout)
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
 
-        try {
-          const locationId = locationMap.get(row.locationCode);
-          if (!locationId) {
-            importErrors.push({
-              row: i + 2,
-              message: `Locatia "${row.locationCode}" nu a fost gasita`,
-            });
-            errorCount++;
-            continue;
-          }
-
-          // Normalize date to midnight UTC for consistent unique key
-          const dateNorm = new Date(
-            Date.UTC(
-              row.date.getUTCFullYear(),
-              row.date.getUTCMonth(),
-              row.date.getUTCDate()
-            )
-          );
-
-          const data = {
-            dayOfWeek: row.dayOfWeek,
-            month: row.month,
-            week: row.week,
-            year: row.year,
-            totalSales: row.totalSales,
-            tva: row.tva,
-            salesExVat: row.salesExVat,
-            receiptCount: Math.round(row.receiptCount),
-            avgReceipt: row.avgReceipt,
-            barSales: row.barSales,
-            barProductCount: Math.round(row.barProductCount),
-            kitchenSales: row.kitchenSales,
-            kitchenProductCount: Math.round(row.kitchenProductCount),
-            cashAmount: row.cashAmount,
-            cardAmount: row.cardAmount,
-            transferAmount: row.transferAmount,
-            accountAmount: row.accountAmount,
-            deliveryAmount: row.deliveryAmount,
-            tipsFiscal: row.tipsFiscal,
-            tipsTotal: row.tipsTotal,
-          };
-
-          // Check if record exists
-          const existing = await tx.dailyIncome.findUnique({
-            where: {
-              locationId_date: {
-                locationId,
-                date: dateNorm,
-              },
-            },
-          });
-
-          if (existing) {
-            await tx.dailyIncome.update({
-              where: { id: existing.id },
-              data,
-            });
-            updatedCount++;
-          } else {
-            await tx.dailyIncome.create({
-              data: {
-                locationId,
-                date: dateNorm,
-                ...data,
-              },
-            });
-            successCount++;
-          }
-        } catch (err) {
+      try {
+        const locationId = locationMap.get(row.locationCode);
+        if (!locationId) {
           importErrors.push({
             row: i + 2,
-            message: err instanceof Error ? err.message : "Eroare necunoscuta",
+            message: `Locatia "${row.locationCode}" nu a fost gasita`,
           });
           errorCount++;
+          continue;
         }
+
+        // Normalize date to midnight UTC for consistent unique key
+        const dateNorm = new Date(
+          Date.UTC(
+            row.date.getUTCFullYear(),
+            row.date.getUTCMonth(),
+            row.date.getUTCDate()
+          )
+        );
+
+        const data = {
+          dayOfWeek: row.dayOfWeek,
+          month: row.month,
+          week: row.week,
+          year: row.year,
+          totalSales: row.totalSales,
+          tva: row.tva,
+          salesExVat: row.salesExVat,
+          receiptCount: Math.round(row.receiptCount),
+          avgReceipt: row.avgReceipt,
+          barSales: row.barSales,
+          barProductCount: Math.round(row.barProductCount),
+          kitchenSales: row.kitchenSales,
+          kitchenProductCount: Math.round(row.kitchenProductCount),
+          cashAmount: row.cashAmount,
+          cardAmount: row.cardAmount,
+          transferAmount: row.transferAmount,
+          accountAmount: row.accountAmount,
+          deliveryAmount: row.deliveryAmount,
+          tipsFiscal: row.tipsFiscal,
+          tipsTotal: row.tipsTotal,
+        };
+
+        await prisma.dailyIncome.upsert({
+          where: {
+            locationId_date: {
+              locationId,
+              date: dateNorm,
+            },
+          },
+          update: data,
+          create: {
+            locationId,
+            date: dateNorm,
+            ...data,
+          },
+        });
+
+        // Check if it was an update by seeing if record existed before
+        // (upsert doesn't tell us, so count all as success)
+        successCount++;
+      } catch (err) {
+        importErrors.push({
+          row: i + 2,
+          message: err instanceof Error ? err.message : "Eroare necunoscuta",
+        });
+        errorCount++;
       }
-    });
+    }
 
     return NextResponse.json({
       success: successCount,
