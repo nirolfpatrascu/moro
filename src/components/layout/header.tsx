@@ -1,8 +1,10 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { Coffee } from "lucide-react";
+import { useSession, signOut } from "next-auth/react";
+import { LogOut, Settings } from "lucide-react";
 import { SearchCommand } from "./search-command";
+import Link from "next/link";
 
 const pageTitles: Record<string, string> = {
   "/": "Dashboard",
@@ -16,23 +18,50 @@ const pageTitles: Record<string, string> = {
   "/suppliers": "Furnizori",
   "/customers": "Clienti",
   "/locations": "Locatii",
+  "/settings": "Setari",
 };
 
 export function Header() {
   const pathname = usePathname();
+  const { data: session } = useSession();
   const title = pageTitles[pathname] ?? "Moro";
 
   return (
-    <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-border bg-surface/80 px-6 backdrop-blur-sm lg:px-8">
+    <header className="sticky top-0 z-20 flex h-14 items-center justify-between border-b border-[#E8DDD0] bg-white/80 px-4 backdrop-blur-sm lg:px-6">
       <div className="flex items-center gap-3 pl-12 lg:pl-0">
-        <h1 className="text-lg font-semibold text-text">{title}</h1>
+        <h1 className="text-sm font-semibold text-[#2D1B0E]">{title}</h1>
       </div>
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3">
         <SearchCommand />
-        <div className="flex items-center gap-2 rounded-lg bg-primary/5 px-3 py-1.5">
-          <Coffee className="h-4 w-4 text-primary" />
-          <span className="text-sm font-medium text-primary">MG + O</span>
-        </div>
+        <Link
+          href="/settings"
+          className="flex h-8 w-8 items-center justify-center rounded-lg text-[#9B8B7F] transition-colors hover:bg-[#FFF3E6] hover:text-[#6F4E37]"
+        >
+          <Settings className="h-4 w-4" />
+        </Link>
+        {session?.user && (
+          <div className="flex items-center gap-2">
+            {session.user.image ? (
+              <img
+                src={session.user.image}
+                alt={session.user.name || ""}
+                className="h-7 w-7 rounded-full"
+                referrerPolicy="no-referrer"
+              />
+            ) : (
+              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#6F4E37] text-xs font-medium text-white">
+                {(session.user.name || session.user.email || "?")[0].toUpperCase()}
+              </div>
+            )}
+            <button
+              onClick={() => signOut({ callbackUrl: "/login" })}
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-[#9B8B7F] transition-colors hover:bg-[#FFEBEE] hover:text-[#F44336]"
+              title="Deconecteaza-te"
+            >
+              <LogOut className="h-4 w-4" />
+            </button>
+          </div>
+        )}
       </div>
     </header>
   );

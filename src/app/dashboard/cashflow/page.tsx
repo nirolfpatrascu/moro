@@ -69,8 +69,8 @@ export default function CashFlowDashboardPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-text">Cash Flow</h2>
-          <p className="mt-1 text-sm text-text-muted">
+          <h2 className="text-xl font-semibold text-[#2D1B0E]">Cash Flow</h2>
+          <p className="mt-0.5 text-xs text-[#9B8B7F]">
             Raport cash flow detaliat — {year}
           </p>
         </div>
@@ -96,25 +96,25 @@ export default function CashFlowDashboardPage() {
             <StatCard
               title="Total Intrari"
               value={formatCurrency(data.totals?.inflows || 0)}
-              icon={<ArrowDownCircle className="h-5 w-5" />}
+              icon={<ArrowDownCircle className="h-4 w-4" />}
               subtitle={`An ${year}`}
             />
             <StatCard
               title="Total Iesiri"
               value={formatCurrency(data.totals?.outflows || 0)}
-              icon={<ArrowUpCircle className="h-5 w-5" />}
+              icon={<ArrowUpCircle className="h-4 w-4" />}
               subtitle={`An ${year}`}
             />
             <StatCard
               title="Flux Net"
               value={formatCurrency(data.totals?.net || 0)}
-              icon={<Wallet className="h-5 w-5" />}
+              icon={<Wallet className="h-4 w-4" />}
               subtitle={`An ${year}`}
             />
             <StatCard
               title="Media lunara"
               value={formatCurrency(data.totals?.monthlyAvg || 0)}
-              icon={<TrendingUp className="h-5 w-5" />}
+              icon={<TrendingUp className="h-4 w-4" />}
               subtitle={`An ${year}`}
             />
           </>

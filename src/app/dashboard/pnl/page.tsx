@@ -114,8 +114,8 @@ export default function PnlDashboardPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-text">Profit & Loss</h2>
-          <p className="mt-1 text-sm text-text-muted">
+          <h2 className="text-xl font-semibold text-[#2D1B0E]">Profit & Loss</h2>
+          <p className="mt-0.5 text-xs text-[#9B8B7F]">
             Raport P&L detaliat — {year}
           </p>
         </div>
@@ -141,25 +141,25 @@ export default function PnlDashboardPage() {
             <StatCard
               title="Venituri"
               value={formatCurrency(data.totals?.income || 0)}
-              icon={<TrendingUp className="h-5 w-5" />}
+              icon={<TrendingUp className="h-4 w-4" />}
               subtitle={`An ${year}`}
             />
             <StatCard
               title="Cheltuieli totale"
               value={formatCurrency(data.totals?.expenses || 0)}
-              icon={<TrendingDown className="h-5 w-5" />}
+              icon={<TrendingDown className="h-4 w-4" />}
               subtitle={`An ${year}`}
             />
             <StatCard
               title="Profit Net"
               value={formatCurrency(data.totals?.netProfit || 0)}
-              icon={<Wallet className="h-5 w-5" />}
+              icon={<Wallet className="h-4 w-4" />}
               subtitle={`An ${year}`}
             />
             <StatCard
               title="Marja neta"
               value={`${(data.totals?.netMargin || 0).toFixed(1)}%`}
-              icon={<Percent className="h-5 w-5" />}
+              icon={<Percent className="h-4 w-4" />}
               subtitle={`An ${year}`}
             />
           </>

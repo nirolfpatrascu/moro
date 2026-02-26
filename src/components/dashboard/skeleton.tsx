@@ -9,7 +9,7 @@ export function ChartSkeleton({ title, height = "h-64" }: { title: string; heigh
         <CardTitle>{title}</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className={`${height} animate-pulse rounded-lg bg-border-light`} />
+        <div className={`${height} animate-pulse rounded-lg bg-gray-100`} />
       </CardContent>
     </Card>
   );
@@ -17,13 +17,13 @@ export function ChartSkeleton({ title, height = "h-64" }: { title: string; heigh
 
 export function StatCardSkeleton() {
   return (
-    <Card className="flex flex-col gap-2">
+    <Card className="flex flex-col gap-1.5">
       <div className="flex items-center justify-between">
-        <div className="h-4 w-24 animate-pulse rounded bg-border-light" />
-        <div className="h-5 w-5 animate-pulse rounded bg-border-light" />
+        <div className="h-3 w-20 animate-pulse rounded bg-gray-100" />
+        <div className="h-4 w-4 animate-pulse rounded bg-gray-100" />
       </div>
-      <div className="h-8 w-32 animate-pulse rounded bg-border-light" />
-      <div className="h-3 w-20 animate-pulse rounded bg-border-light" />
+      <div className="h-6 w-28 animate-pulse rounded bg-gray-100" />
+      <div className="h-3 w-16 animate-pulse rounded bg-gray-100" />
     </Card>
   );
 }

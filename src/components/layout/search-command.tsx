@@ -98,7 +98,7 @@ export function SearchCommand() {
   return (
     <div ref={containerRef} className="relative">
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted" />
+        <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#9B8B7F]" />
         <input
           ref={inputRef}
           type="text"
@@ -109,7 +109,7 @@ export function SearchCommand() {
             setOpen(true);
           }}
           onFocus={() => setOpen(true)}
-          className="h-9 w-64 rounded-lg border border-border bg-background pl-9 pr-8 text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary/50"
+          className="h-8 w-52 rounded-lg border border-gray-200 bg-[#FFF8F0] pl-8 pr-7 text-xs text-[#2D1B0E] placeholder:text-[#9B8B7F] focus:outline-none focus:ring-2 focus:ring-[#6F4E37]/30"
         />
         {query && (
           <button
@@ -117,22 +117,22 @@ export function SearchCommand() {
               setQuery("");
               setResults(null);
             }}
-            className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-0.5 text-text-muted hover:text-text"
+            className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-0.5 text-[#9B8B7F] hover:text-[#2D1B0E]"
           >
-            <X className="h-3.5 w-3.5" />
+            <X className="h-3 w-3" />
           </button>
         )}
       </div>
 
       {/* Results dropdown */}
       {open && query.length >= 2 && (
-        <div className="absolute right-0 top-full z-50 mt-1 w-80 overflow-hidden rounded-lg border border-border bg-surface shadow-lg">
+        <div className="absolute right-0 top-full z-50 mt-1 w-80 overflow-hidden rounded-xl border border-gray-100 bg-white shadow-lg">
           {loading ? (
-            <div className="px-4 py-6 text-center text-sm text-text-muted">
+            <div className="px-4 py-6 text-center text-xs text-[#9B8B7F]">
               Se cauta...
             </div>
           ) : !hasResults ? (
-            <div className="px-4 py-6 text-center text-sm text-text-muted">
+            <div className="px-4 py-6 text-center text-xs text-[#9B8B7F]">
               Niciun rezultat pentru &ldquo;{query}&rdquo;
             </div>
           ) : (
@@ -142,9 +142,9 @@ export function SearchCommand() {
                 if (items.length === 0) return null;
                 return (
                   <div key={key}>
-                    <div className="flex items-center gap-2 bg-background px-3 py-2">
-                      <Icon className="h-3.5 w-3.5 text-text-muted" />
-                      <span className="text-xs font-semibold uppercase tracking-wider text-text-muted">
+                    <div className="flex items-center gap-2 bg-gray-50/50 px-3 py-1.5">
+                      <Icon className="h-3 w-3 text-[#9B8B7F]" />
+                      <span className="text-[10px] font-semibold uppercase tracking-wider text-[#9B8B7F]">
                         {label}
                       </span>
                     </div>
@@ -152,11 +152,11 @@ export function SearchCommand() {
                       <button
                         key={item.id}
                         onClick={() => handleNavigate(item.href)}
-                        className="flex w-full items-center justify-between px-4 py-2 text-left transition-colors hover:bg-surface-hover"
+                        className="flex w-full items-center justify-between px-4 py-2 text-left transition-colors hover:bg-[#FFF8F0]"
                       >
-                        <span className="text-sm text-text">{item.label}</span>
+                        <span className="text-sm text-[#2D1B0E]">{item.label}</span>
                         {item.sublabel && (
-                          <span className="text-xs text-text-muted">{item.sublabel}</span>
+                          <span className="text-xs text-[#9B8B7F]">{item.sublabel}</span>
                         )}
                       </button>
                     ))}

@@ -59,8 +59,8 @@ export default function CogsDashboardPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-text">COGS</h2>
-          <p className="mt-1 text-sm text-text-muted">
+          <h2 className="text-xl font-semibold text-[#2D1B0E]">COGS</h2>
+          <p className="mt-0.5 text-xs text-[#9B8B7F]">
             Cost of Goods Sold — {year}
           </p>
         </div>
@@ -86,25 +86,25 @@ export default function CogsDashboardPage() {
             <StatCard
               title="Total COGS"
               value={formatCurrency(data.totals?.cogs || 0)}
-              icon={<BarChart3 className="h-5 w-5" />}
+              icon={<BarChart3 className="h-4 w-4" />}
               subtitle={`An ${year}`}
             />
             <StatCard
               title="Venituri"
               value={formatCurrency(data.totals?.revenue || 0)}
-              icon={<TrendingUp className="h-5 w-5" />}
+              icon={<TrendingUp className="h-4 w-4" />}
               subtitle={`An ${year}`}
             />
             <StatCard
               title="COGS %"
               value={`${(data.totals?.cogsPercent || 0).toFixed(1)}%`}
-              icon={<Percent className="h-5 w-5" />}
+              icon={<Percent className="h-4 w-4" />}
               subtitle={`An ${year}`}
             />
             <StatCard
               title="Media lunara COGS"
               value={formatCurrency(data.totals?.monthlyAvgCogs || 0)}
-              icon={<Calculator className="h-5 w-5" />}
+              icon={<Calculator className="h-4 w-4" />}
               subtitle={`An ${year}`}
             />
           </>

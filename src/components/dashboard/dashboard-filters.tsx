@@ -31,7 +31,7 @@ export function DashboardFilters({
       <select
         value={year}
         onChange={(e) => onYearChange(Number(e.target.value))}
-        className="h-8 rounded-lg border border-border bg-surface px-2 text-xs font-medium"
+        className="h-8 rounded-lg border border-gray-200 bg-white px-2 text-xs font-medium"
       >
         {years.map((y) => (
           <option key={y} value={y}>
@@ -42,7 +42,7 @@ export function DashboardFilters({
       <select
         value={locationId}
         onChange={(e) => onLocationChange(e.target.value)}
-        className="h-8 rounded-lg border border-border bg-surface px-2 text-xs"
+        className="h-8 rounded-lg border border-gray-200 bg-white px-2 text-xs"
       >
         <option value="">Toate locatiile</option>
         {locations.map((l) => (

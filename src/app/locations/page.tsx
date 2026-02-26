@@ -112,8 +112,8 @@ export default function LocationsPage() {
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-text">Locatii</h2>
-          <p className="mt-1 text-sm text-text-muted">
+          <h2 className="text-xl font-semibold text-[#2D1B0E]">Locatii</h2>
+          <p className="mt-0.5 text-xs text-[#9B8B7F]">
             Locatiile cafenelelor Moro
           </p>
         </div>

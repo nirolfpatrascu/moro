@@ -467,6 +467,16 @@ model Dividend {
 }
 
 // ============================================================
+// AUTH: ALLOWED EMAILS — Whitelist for login
+// ============================================================
+model AllowedEmail {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  addedBy   String?
+  createdAt DateTime @default(now())
+}
+
+// ============================================================
 // REFERENCE: FORECAST
 // ============================================================
 model MonthlyForecast {

@@ -9,7 +9,7 @@ export function Card({ className, children, ...props }: CardProps) {
   return (
     <div
       className={cn(
-        "rounded-card border border-border bg-surface p-6 shadow-sm",
+        "rounded-xl border border-gray-100 bg-white p-5 shadow-sm",
         className
       )}
       {...props}
@@ -21,7 +21,7 @@ export function Card({ className, children, ...props }: CardProps) {
 
 export function CardHeader({ className, children, ...props }: CardProps) {
   return (
-    <div className={cn("mb-4 flex items-center justify-between", className)} {...props}>
+    <div className={cn("mb-3 flex items-center justify-between", className)} {...props}>
       {children}
     </div>
   );
@@ -29,7 +29,7 @@ export function CardHeader({ className, children, ...props }: CardProps) {
 
 export function CardTitle({ className, children, ...props }: CardProps) {
   return (
-    <h3 className={cn("text-lg font-semibold text-text", className)} {...props}>
+    <h3 className={cn("text-sm font-semibold text-[#2D1B0E]", className)} {...props}>
       {children}
     </h3>
   );

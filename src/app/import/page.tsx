@@ -253,8 +253,8 @@ export default function ImportPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-text">Import Excel</h2>
-          <p className="mt-1 text-sm text-text-muted">
+          <h2 className="text-xl font-semibold text-[#2D1B0E]">Import Excel</h2>
+          <p className="mt-0.5 text-xs text-[#9B8B7F]">
             Importa facturi din fisiere Excel (.xlsx)
           </p>
         </div>

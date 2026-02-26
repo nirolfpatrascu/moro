@@ -128,22 +128,22 @@ export default function DashboardPage() {
       {/* Header with filters */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-text">Dashboard</h2>
-          <p className="mt-1 text-sm text-text-muted">
+          <h2 className="text-xl font-semibold text-[#2D1B0E]">Dashboard</h2>
+          <p className="mt-0.5 text-xs text-[#9B8B7F]">
             Sumar general — {periodLabels[period]}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {/* Period selector */}
-          <div className="flex rounded-lg bg-background p-0.5">
+          <div className="flex rounded-lg bg-gray-100 p-0.5">
             {(["month", "quarter", "year"] as Period[]).map((p) => (
               <button
                 key={p}
                 onClick={() => setPeriod(p)}
                 className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
                   period === p
-                    ? "bg-surface text-text shadow-sm"
-                    : "text-text-muted hover:text-text"
+                    ? "bg-white text-[#2D1B0E] shadow-sm"
+                    : "text-[#9B8B7F] hover:text-[#2D1B0E]"
                 }`}
               >
                 {periodLabels[p]}
@@ -155,7 +155,7 @@ export default function DashboardPage() {
           <select
             value={locationId}
             onChange={(e) => setLocationId(e.target.value)}
-            className="h-8 rounded-lg border border-border bg-surface px-2 text-xs"
+            className="h-8 rounded-lg border border-gray-200 bg-white px-2 text-xs"
           >
             <option value="">Toate locatiile</option>
             {locations.map((l) => (
@@ -173,7 +173,7 @@ export default function DashboardPage() {
             <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} />
           </Button>
 
-          <span className="text-[10px] text-text-muted">
+          <span className="text-[10px] text-[#9B8B7F]">
             {lastRefresh.toLocaleTimeString("ro-RO", { hour: "2-digit", minute: "2-digit" })}
           </span>
         </div>
@@ -193,7 +193,7 @@ export default function DashboardPage() {
             <StatCard
               title="Venituri"
               value={formatCurrency(summary.revenue || 0)}
-              icon={<TrendingUp className="h-5 w-5" />}
+              icon={<TrendingUp className="h-4 w-4" />}
               trend={
                 summary.revenueTrend !== undefined
                   ? { value: summary.revenueTrend, label: "vs. perioada anterioara" }
@@ -204,13 +204,13 @@ export default function DashboardPage() {
             <StatCard
               title="Cheltuieli"
               value={formatCurrency(summary.expenses || 0)}
-              icon={<Receipt className="h-5 w-5" />}
+              icon={<Receipt className="h-4 w-4" />}
               subtitle={periodLabels[period]}
             />
             <StatCard
               title="Profit Net"
               value={formatCurrency(summary.netProfit || 0)}
-              icon={<Wallet className="h-5 w-5" />}
+              icon={<Wallet className="h-4 w-4" />}
               subtitle={
                 summary.revenue > 0
                   ? `Marja: ${Math.round(((summary.netProfit || 0) / summary.revenue) * 100)}%`
@@ -222,7 +222,7 @@ export default function DashboardPage() {
               value={formatCurrency(
                 (summary.outstandingPayables || 0) + (summary.outstandingReceivables || 0)
               )}
-              icon={<AlertTriangle className="h-5 w-5" />}
+              icon={<AlertTriangle className="h-4 w-4" />}
               subtitle={`${(summary.outstandingPayablesCount || 0) + (summary.outstandingReceivablesCount || 0)} facturi`}
             />
           </>
