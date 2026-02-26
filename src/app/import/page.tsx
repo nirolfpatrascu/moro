@@ -172,6 +172,7 @@ export default function ImportPage() {
         return;
       }
 
+      setConfirmOpen(false);
       setState((s) => ({
         ...s,
         step: "preview",
@@ -245,6 +246,7 @@ export default function ImportPage() {
         return;
       }
 
+      setConfirmOpen(false);
       setState((s) => ({
         ...s,
         step: "preview",
@@ -799,6 +801,7 @@ export default function ImportPage() {
                   Inapoi
                 </Button>
                 <Button
+                  type="button"
                   variant="primary"
                   onClick={() => setConfirmOpen(true)}
                 >
