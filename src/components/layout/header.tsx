@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { Coffee } from "lucide-react";
+import { SearchCommand } from "./search-command";
 
 const pageTitles: Record<string, string> = {
   "/": "Dashboard",
@@ -27,6 +28,7 @@ export function Header() {
         <h1 className="text-lg font-semibold text-text">{title}</h1>
       </div>
       <div className="flex items-center gap-4">
+        <SearchCommand />
         <div className="flex items-center gap-2 rounded-lg bg-primary/5 px-3 py-1.5">
           <Coffee className="h-4 w-4 text-primary" />
           <span className="text-sm font-medium text-primary">MG + O</span>

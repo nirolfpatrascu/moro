@@ -16,6 +16,7 @@ import {
   Eye,
   Pencil,
   Trash2,
+  Download,
   ChevronLeft,
   ChevronRight,
   FileOutput,
@@ -28,6 +29,7 @@ import {
 import { formatCurrency } from "@/lib/utils";
 import { OutgoingInvoiceFormModal } from "@/components/outgoing/invoice-form";
 import { OutgoingInvoiceDetailModal } from "@/components/outgoing/invoice-detail";
+import { exportToCSV } from "@/lib/export";
 
 // ── Types ─────────────────────────────────────────────────
 interface InvoiceRow {
@@ -269,17 +271,38 @@ export default function OutgoingInvoicesPage() {
             {pagination.total} facturi emise catre clienti
           </p>
         </div>
-        <Button
-          variant="primary"
-          size="sm"
-          onClick={() => {
-            setEditingInvoice(null);
-            setFormOpen(true);
-          }}
-        >
-          <Plus className="h-4 w-4" />
-          Adauga factura
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              exportToCSV(invoices, "facturi-iesire", [
+                { header: "Nr. Factura", accessor: (i) => i.invoiceNumber },
+                { header: "Client", accessor: (i) => i.customer.name },
+                { header: "Data emitere", accessor: (i) => i.issueDate ? new Date(i.issueDate).toLocaleDateString("ro-RO") : "" },
+                { header: "Total fara TVA", accessor: (i) => i.amountExVat },
+                { header: "Total", accessor: (i) => i.totalAmount },
+                { header: "Platit", accessor: (i) => i.paidAmount },
+                { header: "Neachitat", accessor: (i) => i.unpaidAmount },
+                { header: "Status", accessor: (i) => i.status },
+              ]);
+            }}
+          >
+            <Download className="h-4 w-4" />
+            Export CSV
+          </Button>
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => {
+              setEditingInvoice(null);
+              setFormOpen(true);
+            }}
+          >
+            <Plus className="h-4 w-4" />
+            Adauga factura
+          </Button>
+        </div>
       </div>
 
       {/* Bulk Actions Bar */}

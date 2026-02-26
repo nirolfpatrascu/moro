@@ -18,6 +18,7 @@ import {
   Pencil,
   Trash2,
   Upload,
+  Download,
   ChevronLeft,
   ChevronRight,
   FileInput,
@@ -30,6 +31,7 @@ import {
 import { formatCurrency } from "@/lib/utils";
 import { InvoiceFormModal } from "@/components/incoming/invoice-form";
 import { InvoiceDetailModal } from "@/components/incoming/invoice-detail";
+import { exportToCSV } from "@/lib/export";
 
 // ── Types ─────────────────────────────────────────────────
 interface InvoiceRow {
@@ -275,6 +277,29 @@ export default function IncomingInvoicesPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              exportToCSV(invoices, "facturi-intrare", [
+                { header: "Nr. Factura", accessor: (i) => i.invoiceNumber },
+                { header: "Furnizor", accessor: (i) => i.supplier.name },
+                { header: "Locatie", accessor: (i) => i.location.code },
+                { header: "Data emitere", accessor: (i) => i.issueDate || "" },
+                { header: "Descriere", accessor: (i) => i.itemDescription || "" },
+                { header: "Total fara TVA", accessor: (i) => i.amountExVat },
+                { header: "TVA", accessor: (i) => i.vatAmount },
+                { header: "Total", accessor: (i) => i.totalAmount },
+                { header: "Platit", accessor: (i) => i.paidAmount },
+                { header: "Rest", accessor: (i) => i.remainingAmount },
+                { header: "Status", accessor: (i) => i.status },
+                { header: "Categorie", accessor: (i) => i.plCategory },
+              ]);
+            }}
+          >
+            <Download className="h-4 w-4" />
+            Export CSV
+          </Button>
           <Link href="/import">
             <Button variant="outline" size="sm">
               <Upload className="h-4 w-4" />

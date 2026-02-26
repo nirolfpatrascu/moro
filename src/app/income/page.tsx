@@ -16,6 +16,7 @@ import {
   Eye,
   Pencil,
   Trash2,
+  Download,
   ChevronLeft,
   ChevronRight,
   Receipt,
@@ -29,6 +30,7 @@ import { formatCurrency } from "@/lib/utils";
 import { RECEIPT_TYPES, PAYMENT_METHODS } from "@/lib/validations/receipt";
 import { ReceiptFormModal } from "@/components/receipts/receipt-form";
 import { ReceiptDetailModal } from "@/components/receipts/receipt-detail";
+import { exportToCSV } from "@/lib/export";
 
 interface ReceiptRow {
   id: string;
@@ -216,6 +218,25 @@ export default function IncomePage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              exportToCSV(receipts, "incasari", [
+                { header: "Data", accessor: (r) => new Date(r.date).toLocaleDateString("ro-RO") },
+                { header: "Tip", accessor: (r) => r.type },
+                { header: "Descriere", accessor: (r) => r.description || "" },
+                { header: "Categorie", accessor: (r) => r.category || "" },
+                { header: "Suma", accessor: (r) => r.amount },
+                { header: "Metoda plata", accessor: (r) => r.paymentMethod },
+                { header: "Nr. bon", accessor: (r) => r.receiptNumber || "" },
+                { header: "Locatie", accessor: (r) => r.location.code },
+              ]);
+            }}
+          >
+            <Download className="h-4 w-4" />
+            Export CSV
+          </Button>
           <Button
             variant="outline"
             size="sm"

@@ -15,8 +15,10 @@ import {
   Trash2,
   Users,
   FileOutput,
+  Download,
 } from "lucide-react";
 import { CustomerFormModal } from "@/components/customers/customer-form";
+import { exportToCSV } from "@/lib/export";
 
 interface CustomerRow {
   id: string;
@@ -130,17 +132,32 @@ export default function CustomersPage() {
             {customers.length} clienti
           </p>
         </div>
-        <Button
-          variant="primary"
-          size="sm"
-          onClick={() => {
-            setEditingCustomer(null);
-            setFormOpen(true);
-          }}
-        >
-          <Plus className="h-4 w-4" />
-          Adauga client
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              exportToCSV(filtered, "clienti", [
+                { header: "Nume", accessor: (c) => c.name },
+                { header: "Nr. facturi", accessor: (c) => c._count.invoices },
+              ]);
+            }}
+          >
+            <Download className="h-4 w-4" />
+            Export CSV
+          </Button>
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => {
+              setEditingCustomer(null);
+              setFormOpen(true);
+            }}
+          >
+            <Plus className="h-4 w-4" />
+            Adauga client
+          </Button>
+        </div>
       </div>
 
       {/* Search */}
