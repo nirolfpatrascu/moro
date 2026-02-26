@@ -64,11 +64,10 @@ export async function POST(request: NextRequest) {
       const rowIdx = (row._rowIndex as number) || 0;
 
       try {
-        const invoiceNumber = String(row.invoiceNumber ?? "").trim();
+        // Invoice number — fallback to "NA" with unique suffix
+        let invoiceNumber = String(row.invoiceNumber ?? "").trim();
         if (!invoiceNumber) {
-          importErrors.push({ row: rowIdx, message: "Nr. factura lipseste" });
-          errorCount++;
-          continue;
+          invoiceNumber = `NA-${rowIdx}`;
         }
 
         // Handle duplicate invoice numbers
@@ -80,17 +79,19 @@ export async function POST(request: NextRequest) {
           // "rename" strategy: append suffix below
         }
 
-        // Resolve location
+        // Resolve location — fallback to first available location
         const locationStr = String(row.location ?? "").trim().toUpperCase();
         let locationId = locationMap.get(locationStr);
         if (!locationId) {
-          // Try partial match
           for (const [key, id] of locationMap) {
             if (key.includes(locationStr) || locationStr.includes(key)) {
               locationId = id;
               break;
             }
           }
+        }
+        if (!locationId && locations.length > 0) {
+          locationId = locations[0].id;
         }
         if (!locationId) {
           importErrors.push({
@@ -101,23 +102,15 @@ export async function POST(request: NextRequest) {
           continue;
         }
 
-        // Resolve or create supplier
-        const supplierName = String(row.supplierName ?? "").trim();
+        // Resolve or create supplier — fallback to "NA"
+        const supplierName = String(row.supplierName ?? "").trim() || "NA";
         let supplierId = supplierMap.get(supplierName.toUpperCase());
-        if (!supplierId && supplierName) {
+        if (!supplierId) {
           const newSupplier = await prisma.supplier.create({
             data: { name: supplierName },
           });
           supplierId = newSupplier.id;
           supplierMap.set(supplierName.toUpperCase(), supplierId);
-        }
-        if (!supplierId) {
-          importErrors.push({
-            row: rowIdx,
-            message: "Furnizor lipseste",
-          });
-          errorCount++;
-          continue;
         }
 
         // Parse dates
@@ -141,15 +134,15 @@ export async function POST(request: NextRequest) {
           month = MONTHS_RO[monthIdx];
         }
         if (!month) {
-          month = MONTHS_RO[0];
+          month = "NA";
         }
 
-        // Use actual P&L fields from Excel
-        const plCategory = String(row.plCategory ?? "COGS").trim().toUpperCase() || "COGS";
-        const category = String(row.category ?? "GENERAL").trim().toUpperCase() || "GENERAL";
+        // P&L fields — fallback to "NA"
+        const plCategory = String(row.plCategory ?? "").trim().toUpperCase() || "NA";
+        const category = String(row.category ?? "").trim().toUpperCase() || "NA";
         const subcategory = row.subcategory
           ? String(row.subcategory).trim()
-          : null;
+          : "NA";
 
         // Parse amounts from Excel — use actual values
         const totalAmount = Number(row.totalAmount) || 0;
@@ -202,7 +195,7 @@ export async function POST(request: NextRequest) {
             subcategory,
             invoiceNumber: finalInvoiceNumber,
             supplierId,
-            issueDate: issueDateRaw != null ? String(issueDateRaw) : null,
+            issueDate: issueDateRaw != null ? String(issueDateRaw) : "NA",
             issueDateParsed: parsedIssueDate,
             dueDate: parsedDueDate,
             amountExVat,
@@ -214,7 +207,7 @@ export async function POST(request: NextRequest) {
             paymentMonth,
             paymentDay,
             remainingAmount,
-            notes: row.notes ? String(row.notes) : null,
+            notes: row.notes ? String(row.notes) : "NA",
           },
         });
 

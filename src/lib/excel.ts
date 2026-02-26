@@ -110,13 +110,7 @@ export function readMappedRows(
     // Skip completely empty rows
     if (!hasData) continue;
 
-    // Validate required fields
-    if (!mapped.invoiceNumber || String(mapped.invoiceNumber).trim() === "") {
-      errors.push({ row: i + 2, message: "Nr. factura lipseste" });
-    }
-    if (!mapped.location || String(mapped.location).trim() === "") {
-      errors.push({ row: i + 2, message: "Locatia lipseste" });
-    }
+    // No strict validation here — commit route handles all fallbacks with "NA"
 
     mapped._rowIndex = i + 2; // Excel row number (1-indexed header + 1)
     rows.push(mapped);
