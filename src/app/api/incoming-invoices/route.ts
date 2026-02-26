@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { incomingInvoiceCreateSchema } from "@/lib/validations/incoming-invoice";
+import { incomingInvoiceCreateSchema, bulkStatusUpdateSchema } from "@/lib/validations/incoming-invoice";
 import { parseDateFlexible } from "@/lib/excel";
 import { MONTHS_RO } from "@/lib/utils";
 
@@ -145,6 +145,59 @@ export async function POST(request: NextRequest) {
     console.error("Create incoming invoice error:", error);
     return NextResponse.json(
       { error: "Eroare la crearea facturii" },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * PATCH /api/incoming-invoices
+ * Bulk status update — mark multiple invoices as paid/unpaid.
+ */
+export async function PATCH(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const parsed = bulkStatusUpdateSchema.safeParse(body);
+
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: "Date invalide", details: parsed.error.issues },
+        { status: 400 }
+      );
+    }
+
+    const { ids, status } = parsed.data;
+    const now = new Date();
+
+    // Fetch all invoices to calculate paid amounts
+    const invoices = await prisma.incomingInvoice.findMany({
+      where: { id: { in: ids } },
+    });
+
+    await prisma.$transaction(
+      invoices.map((inv) =>
+        prisma.incomingInvoice.update({
+          where: { id: inv.id },
+          data: {
+            status,
+            paidAmount: status === "PAID" ? inv.totalAmount : status === "UNPAID" ? 0 : inv.paidAmount,
+            remainingAmount: status === "PAID" ? 0 : status === "UNPAID" ? inv.totalAmount : inv.remainingAmount,
+            paymentYear: status === "PAID" ? now.getFullYear() : null,
+            paymentMonth: status === "PAID" ? MONTHS_RO[now.getMonth()] : null,
+            paymentDay: status === "PAID" ? now.getDate() : null,
+          },
+        })
+      )
+    );
+
+    return NextResponse.json({
+      success: true,
+      updated: ids.length,
+    });
+  } catch (error) {
+    console.error("Bulk status update error:", error);
+    return NextResponse.json(
+      { error: "Eroare la actualizarea in masa" },
       { status: 500 }
     );
   }

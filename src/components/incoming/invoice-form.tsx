@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import { Button, Input, Modal } from "@/components/ui";
 import { useToast } from "@/components/ui/toast";
-import { Loader2 } from "lucide-react";
+import { Loader2, Plus } from "lucide-react";
+import { PL_CATEGORIES } from "@/lib/utils";
 
 interface InvoiceData {
   id?: string;
@@ -16,8 +17,13 @@ interface InvoiceData {
   qty: number;
   unitPrice: number;
   totalAmount: number;
+  amountExVat: number;
+  vatAmount: number;
   status: string;
   notes: string | null;
+  plCategory?: string;
+  category?: string;
+  subcategory?: string | null;
   supplier?: { id: string; name: string };
   location?: { id: string; code: string; name: string };
 }
@@ -40,8 +46,13 @@ interface FormState {
   qty: string;
   unitPrice: string;
   totalAmount: string;
+  amountExVat: string;
+  vatAmount: string;
   status: string;
   notes: string;
+  plCategory: string;
+  category: string;
+  subcategory: string;
 }
 
 const emptyForm: FormState = {
@@ -54,8 +65,21 @@ const emptyForm: FormState = {
   qty: "0",
   unitPrice: "0",
   totalAmount: "0",
+  amountExVat: "0",
+  vatAmount: "0",
   status: "UNPAID",
   notes: "",
+  plCategory: "COGS",
+  category: "",
+  subcategory: "",
+};
+
+const CATEGORY_OPTIONS: Record<string, string[]> = {
+  COGS: ["BAR", "BUCATARIE", "CONSUMABILE", "TRANSPORT", "LIVRARE", "DIVERSE"],
+  COSTFIX: ["CHIRII", "UTILITATI", "BANCA", "DIVERSE"],
+  OPEX: ["LICENTE", "CONSULTING", "CONTABILITATE", "AUTORIZATII", "MARKETING", "DIVERSE", "INVENTAR OBIECTE"],
+  TAXE: ["IMPOZIT VENIT", "TVA", "ALTE TAXE"],
+  PEOPLE: ["SALARII", "COLABORATORI", "TAXE SALARIU", "TICHETE MASA", "BONUSURI", "UNIFORME", "TRAINING"],
 };
 
 export function InvoiceFormModal({
@@ -69,12 +93,15 @@ export function InvoiceFormModal({
   const [suppliers, setSuppliers] = useState<{ id: string; name: string }[]>([]);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [newSupplierName, setNewSupplierName] = useState("");
+  const [showNewSupplier, setShowNewSupplier] = useState(false);
+  const [creatingSupplier, setCreatingSupplier] = useState(false);
   const { toast } = useToast();
 
   const isEdit = !!invoice?.id;
 
   // Load suppliers
-  useEffect(() => {
+  const loadSuppliers = () => {
     fetch("/api/suppliers")
       .then((r) => r.json())
       .then((data) => {
@@ -82,6 +109,10 @@ export function InvoiceFormModal({
         else if (data.data) setSuppliers(data.data);
       })
       .catch(() => {});
+  };
+
+  useEffect(() => {
+    loadSuppliers();
   }, []);
 
   // Populate form when editing
@@ -97,13 +128,20 @@ export function InvoiceFormModal({
         qty: String(invoice.qty || 0),
         unitPrice: String(invoice.unitPrice || 0),
         totalAmount: String(invoice.totalAmount || 0),
+        amountExVat: String(invoice.amountExVat || 0),
+        vatAmount: String(invoice.vatAmount || 0),
         status: invoice.status || "UNPAID",
         notes: invoice.notes || "",
+        plCategory: invoice.plCategory || "COGS",
+        category: invoice.category || "",
+        subcategory: invoice.subcategory || "",
       });
     } else {
       setForm(emptyForm);
     }
     setErrors({});
+    setShowNewSupplier(false);
+    setNewSupplierName("");
   }, [invoice, open]);
 
   const handleChange = (
@@ -119,9 +157,39 @@ export function InvoiceFormModal({
     const qty = parseFloat(form.qty) || 0;
     const unitPrice = parseFloat(form.unitPrice) || 0;
     if (qty > 0 && unitPrice > 0) {
-      setForm((f) => ({ ...f, totalAmount: String((qty * unitPrice).toFixed(2)) }));
+      const total = +(qty * unitPrice).toFixed(2);
+      const exVat = +(total / 1.19).toFixed(2);
+      const vat = +(total - exVat).toFixed(2);
+      setForm((f) => ({
+        ...f,
+        totalAmount: String(total),
+        amountExVat: String(exVat),
+        vatAmount: String(vat),
+      }));
     }
   }, [form.qty, form.unitPrice]);
+
+  // Auto-calculate exVat/vat when total changes manually
+  const handleTotalChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const total = parseFloat(e.target.value) || 0;
+    const exVat = +(total / 1.19).toFixed(2);
+    const vat = +(total - exVat).toFixed(2);
+    setForm((f) => ({
+      ...f,
+      totalAmount: e.target.value,
+      amountExVat: String(exVat),
+      vatAmount: String(vat),
+    }));
+    setErrors((prev) => ({ ...prev, totalAmount: "" }));
+  };
+
+  // Reset category when plCategory changes
+  useEffect(() => {
+    const options = CATEGORY_OPTIONS[form.plCategory] || [];
+    if (!options.includes(form.category)) {
+      setForm((f) => ({ ...f, category: options[0] || "", subcategory: "" }));
+    }
+  }, [form.plCategory, form.category]);
 
   const validate = (): boolean => {
     const errs: Record<string, string> = {};
@@ -133,6 +201,33 @@ export function InvoiceFormModal({
     }
     setErrors(errs);
     return Object.keys(errs).length === 0;
+  };
+
+  // Create new supplier inline
+  const handleCreateSupplier = async () => {
+    if (!newSupplierName.trim()) return;
+    setCreatingSupplier(true);
+    try {
+      const res = await fetch("/api/suppliers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newSupplierName.trim() }),
+      });
+      const data = await res.json();
+      if (res.ok || data.id) {
+        loadSuppliers();
+        setForm((f) => ({ ...f, supplierId: data.id }));
+        setShowNewSupplier(false);
+        setNewSupplierName("");
+        toast({ title: "Furnizor adaugat", variant: "success" });
+      } else {
+        toast({ title: data.error || "Eroare", variant: "danger" });
+      }
+    } catch {
+      toast({ title: "Eroare la crearea furnizorului", variant: "danger" });
+    } finally {
+      setCreatingSupplier(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -151,8 +246,13 @@ export function InvoiceFormModal({
         qty: parseFloat(form.qty) || 0,
         unitPrice: parseFloat(form.unitPrice) || 0,
         totalAmount: parseFloat(form.totalAmount) || 0,
+        amountExVat: parseFloat(form.amountExVat) || 0,
+        vatAmount: parseFloat(form.vatAmount) || 0,
         status: form.status,
         notes: form.notes || null,
+        plCategory: form.plCategory,
+        category: form.category || "GENERAL",
+        subcategory: form.subcategory || null,
       };
 
       const url = isEdit
@@ -188,6 +288,8 @@ export function InvoiceFormModal({
     }
   };
 
+  const categoryOptions = CATEGORY_OPTIONS[form.plCategory] || [];
+
   return (
     <Modal
       open={open}
@@ -195,9 +297,9 @@ export function InvoiceFormModal({
       title={isEdit ? "Editeaza factura" : "Adauga factura noua"}
       className="max-w-2xl"
     >
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4 max-h-[70vh] overflow-y-auto pr-1">
+        {/* Basic info */}
         <div className="grid gap-4 sm:grid-cols-2">
-          {/* Invoice Number */}
           <Input
             id="invoiceNumber"
             name="invoiceNumber"
@@ -232,26 +334,79 @@ export function InvoiceFormModal({
             )}
           </div>
 
-          {/* Supplier */}
-          <div className="flex flex-col gap-1.5">
+          {/* Supplier with create shortcut */}
+          <div className="flex flex-col gap-1.5 sm:col-span-2">
             <label className="text-sm font-medium text-text-secondary">
               Furnizor *
             </label>
-            <select
-              name="supplierId"
-              value={form.supplierId}
-              onChange={handleChange}
-              className={`h-10 w-full rounded-lg border bg-surface px-3 text-sm text-text ${
-                errors.supplierId ? "border-danger" : "border-border"
-              }`}
-            >
-              <option value="">Selecteaza furnizorul</option>
-              {suppliers.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                </option>
-              ))}
-            </select>
+            {!showNewSupplier ? (
+              <div className="flex gap-2">
+                <select
+                  name="supplierId"
+                  value={form.supplierId}
+                  onChange={handleChange}
+                  className={`h-10 flex-1 rounded-lg border bg-surface px-3 text-sm text-text ${
+                    errors.supplierId ? "border-danger" : "border-border"
+                  }`}
+                >
+                  <option value="">Selecteaza furnizorul</option>
+                  {suppliers.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name}
+                    </option>
+                  ))}
+                </select>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowNewSupplier(true)}
+                  className="shrink-0"
+                >
+                  <Plus className="h-4 w-4" />
+                  Nou
+                </Button>
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Nume furnizor nou..."
+                  value={newSupplierName}
+                  onChange={(e) => setNewSupplierName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleCreateSupplier();
+                    }
+                  }}
+                  className="h-10 flex-1 rounded-lg border border-border bg-surface px-3 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  autoFocus
+                />
+                <Button
+                  type="button"
+                  variant="primary"
+                  size="sm"
+                  onClick={handleCreateSupplier}
+                  loading={creatingSupplier}
+                  className="shrink-0"
+                >
+                  Adauga
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setShowNewSupplier(false);
+                    setNewSupplierName("");
+                  }}
+                  className="shrink-0"
+                >
+                  Anuleaza
+                </Button>
+              </div>
+            )}
             {errors.supplierId && (
               <p className="text-xs text-danger">{errors.supplierId}</p>
             )}
@@ -295,6 +450,54 @@ export function InvoiceFormModal({
           />
         </div>
 
+        {/* P&L Classification */}
+        <div className="border-t border-border pt-4">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-text-muted">
+            Clasificare P&L
+          </p>
+          <div className="grid gap-4 sm:grid-cols-3">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-medium text-text-secondary">
+                Categorie P&L
+              </label>
+              <select
+                name="plCategory"
+                value={form.plCategory}
+                onChange={handleChange}
+                className="h-10 w-full rounded-lg border border-border bg-surface px-3 text-sm text-text"
+              >
+                {PL_CATEGORIES.map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-medium text-text-secondary">
+                Categorie
+              </label>
+              <select
+                name="category"
+                value={form.category}
+                onChange={handleChange}
+                className="h-10 w-full rounded-lg border border-border bg-surface px-3 text-sm text-text"
+              >
+                <option value="">Selecteaza</option>
+                {categoryOptions.map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+            </div>
+            <Input
+              id="subcategory"
+              name="subcategory"
+              label="Subcategorie"
+              placeholder="Optional"
+              value={form.subcategory}
+              onChange={handleChange}
+            />
+          </div>
+        </div>
+
         {/* Item description */}
         <Input
           id="itemDescription"
@@ -330,10 +533,34 @@ export function InvoiceFormModal({
             id="totalAmount"
             name="totalAmount"
             type="number"
-            label="Total (RON) *"
+            label="Total cu TVA (RON) *"
             value={form.totalAmount}
-            onChange={handleChange}
+            onChange={handleTotalChange}
             error={errors.totalAmount}
+            min="0"
+            step="0.01"
+          />
+        </div>
+
+        {/* Computed tax breakdown */}
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Input
+            id="amountExVat"
+            name="amountExVat"
+            type="number"
+            label="Suma fara TVA"
+            value={form.amountExVat}
+            onChange={handleChange}
+            min="0"
+            step="0.01"
+          />
+          <Input
+            id="vatAmount"
+            name="vatAmount"
+            type="number"
+            label="TVA"
+            value={form.vatAmount}
+            onChange={handleChange}
             min="0"
             step="0.01"
           />
@@ -354,7 +581,7 @@ export function InvoiceFormModal({
         </div>
 
         {/* Actions */}
-        <div className="flex justify-end gap-3 pt-2">
+        <div className="flex justify-end gap-3 border-t border-border pt-4">
           <Button
             type="button"
             variant="outline"

@@ -30,8 +30,23 @@ export const incomingInvoiceCreateSchema = z.object({
 
 export const incomingInvoiceUpdateSchema = incomingInvoiceCreateSchema.partial();
 
+export const invoiceStatusUpdateSchema = z.object({
+  status: z.enum(["PAID", "UNPAID", "PARTIAL"]),
+  paidAmount: z.coerce.number().optional(),
+  paymentYear: z.coerce.number().optional().nullable(),
+  paymentMonth: z.string().optional().nullable(),
+  paymentDay: z.coerce.number().optional().nullable(),
+});
+
+export const bulkStatusUpdateSchema = z.object({
+  ids: z.array(z.string().min(1)).min(1, "Selecteaza cel putin o factura"),
+  status: z.enum(["PAID", "UNPAID", "PARTIAL"]),
+});
+
 export type IncomingInvoiceCreate = z.infer<typeof incomingInvoiceCreateSchema>;
 export type IncomingInvoiceUpdate = z.infer<typeof incomingInvoiceUpdateSchema>;
+export type InvoiceStatusUpdate = z.infer<typeof invoiceStatusUpdateSchema>;
+export type BulkStatusUpdate = z.infer<typeof bulkStatusUpdateSchema>;
 
 // ── Import column mapping ──────────────────────────────────
 // Maps DB field names to Excel column headers

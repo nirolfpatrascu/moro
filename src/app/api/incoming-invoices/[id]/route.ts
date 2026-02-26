@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { incomingInvoiceUpdateSchema } from "@/lib/validations/incoming-invoice";
+import { incomingInvoiceUpdateSchema, invoiceStatusUpdateSchema } from "@/lib/validations/incoming-invoice";
 import { parseDateFlexible } from "@/lib/excel";
 import { MONTHS_RO } from "@/lib/utils";
 
@@ -124,6 +124,67 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     console.error("Update incoming invoice error:", error);
     return NextResponse.json(
       { error: "Eroare la actualizarea facturii" },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * PATCH /api/incoming-invoices/[id]
+ * Update invoice status (mark as paid/unpaid/partial).
+ */
+export async function PATCH(request: NextRequest, { params }: RouteParams) {
+  try {
+    const { id } = await params;
+    const body = await request.json();
+    const parsed = invoiceStatusUpdateSchema.safeParse(body);
+
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: "Date invalide", details: parsed.error.issues },
+        { status: 400 }
+      );
+    }
+
+    const existing = await prisma.incomingInvoice.findUnique({
+      where: { id },
+    });
+
+    if (!existing) {
+      return NextResponse.json(
+        { error: "Factura nu a fost gasita" },
+        { status: 404 }
+      );
+    }
+
+    const { status, paidAmount, paymentYear, paymentMonth, paymentDay } = parsed.data;
+
+    const now = new Date();
+    const resolvedPaidAmount =
+      paidAmount ?? (status === "PAID" ? existing.totalAmount : status === "UNPAID" ? 0 : existing.paidAmount);
+    const remainingAmount = existing.totalAmount - resolvedPaidAmount;
+
+    const invoice = await prisma.incomingInvoice.update({
+      where: { id },
+      data: {
+        status,
+        paidAmount: resolvedPaidAmount,
+        remainingAmount,
+        paymentYear: paymentYear ?? (status === "PAID" ? now.getFullYear() : existing.paymentYear),
+        paymentMonth: paymentMonth ?? (status === "PAID" ? MONTHS_RO[now.getMonth()] : existing.paymentMonth),
+        paymentDay: paymentDay ?? (status === "PAID" ? now.getDate() : existing.paymentDay),
+      },
+      include: {
+        location: { select: { id: true, code: true, name: true } },
+        supplier: { select: { id: true, name: true } },
+      },
+    });
+
+    return NextResponse.json(invoice);
+  } catch (error) {
+    console.error("Patch incoming invoice status error:", error);
+    return NextResponse.json(
+      { error: "Eroare la actualizarea statusului" },
       { status: 500 }
     );
   }
