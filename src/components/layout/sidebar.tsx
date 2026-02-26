@@ -65,18 +65,18 @@ export function Sidebar() {
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed left-0 top-0 z-40 flex h-screen w-64 flex-col bg-[#6F4E37] transition-transform duration-200 lg:translate-x-0",
+          "fixed left-0 top-0 z-40 flex h-screen w-64 flex-col bg-[#6F4E37] pl-4 transition-transform duration-200 lg:translate-x-0",
           open ? "translate-x-0" : "-translate-x-full"
         )}
       >
         {/* Logo */}
-        <div className="flex h-14 items-center gap-3 border-b border-white/10 px-5">
+        <div className="flex h-14 items-center gap-3 border-b border-white/10 px-3">
           <Coffee className="h-6 w-6 text-white" />
           <span className="text-lg font-bold text-white">Moro</span>
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto px-3 py-3">
+        <nav className="flex-1 overflow-y-auto py-3 pr-3">
           <ul className="flex flex-col gap-0.5">
             {navItems.map((item, i) => {
               if ("type" in item && item.type === "separator") {
@@ -118,7 +118,7 @@ export function Sidebar() {
         </nav>
 
         {/* Footer */}
-        <div className="border-t border-white/10 px-5 py-3">
+        <div className="border-t border-white/10 px-3 py-3">
           <p className="text-[11px] text-white/40">Moro Coffee Manager</p>
           <p className="text-[10px] text-white/30">v0.1.0</p>
         </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { StatCard } from "@/components/ui";
 import { StatCardSkeleton } from "@/components/dashboard/skeleton";
 import { CashFlowChart } from "@/components/dashboard/cash-flow-chart";
@@ -22,12 +22,65 @@ import { Button } from "@/components/ui";
 
 type Period = "month" | "quarter" | "year";
 
+const MOTIVATIONAL_MESSAGES = [
+  "Fiecare ceașcă de cafea servită este o poveste frumoasă.",
+  "Astăzi este o zi perfectă pentru afaceri excelente!",
+  "Succesul se construiește zi de zi, ceașcă cu ceașcă.",
+  "Pasiunea ta pentru cafea se simte în fiecare detaliu.",
+  "Un business de succes începe cu o cafea bună și o atitudine pozitivă.",
+  "Cele mai bune lucruri încep cu o cafea dimineața.",
+  "O cafea bună face orice zi mai bună.",
+  "Fiecare client mulțumit e cea mai bună reclamă.",
+  "Consistența este secretul unei cafenele de succes.",
+  "Astăzi e momentul perfect să faci ceva extraordinar.",
+  "Cafeaua bună aduce oameni buni împreună.",
+  "Micile detalii fac diferența între bun și excepțional.",
+  "Energia unei zile bune începe cu prima ceașcă.",
+  "Fiecare zi e o oportunitate nouă de a crește.",
+  "Munca ta de azi construiește succesul de mâine.",
+  "Zâmbetul unui client face totul să merite.",
+  "Calitatea nu e niciodată un accident, e un efort conștient.",
+  "O afacere de succes se construiește pas cu pas.",
+  "Cafea bună, oameni buni, rezultate bune.",
+  "Astăzi suntem mai buni decât ieri.",
+  "Fiecare dimineață e un nou început plin de posibilități.",
+  "Pasiunea este ingredientul secret al succesului.",
+  "Un business de succes începe cu atenția la detalii.",
+  "Cafeaua perfectă vine din dedicare și profesionalism.",
+  "Curajul de a îmbunătăți lucrurile face diferența.",
+  "Excelența nu e un act, ci un obicei zilnic.",
+  "Fiecare zi aduce noi oportunități de a impresiona.",
+  "Lucrul bine făcut este cea mai bună strategie.",
+  "Echipa puternică, cafea puternică, rezultate puternice.",
+  "Clienții fericiți sunt cea mai valoroasă investiție.",
+  "Creativitatea și cafeaua merg mână în mână.",
+  "Astăzi transformăm cafeaua în povești frumoase.",
+  "Succesul e o călătorie, nu o destinație.",
+  "Aroma succesului se simte în fiecare colț al cafenelei.",
+  "Împreună construim ceva special, ceașcă cu ceașcă.",
+  "Fiecare zi e o pagină nouă în povestea Moro.",
+  "Răbdarea și cafeaua bună au ceva în comun: merită așteptarea.",
+  "Când iubești ce faci, fiecare zi e o reușită.",
+];
+
+function getGreeting(): string {
+  const hour = new Date().getHours();
+  if (hour < 12) return "Bună dimineața";
+  if (hour < 18) return "Bună ziua";
+  return "Bună seara";
+}
+
 export default function DashboardPage() {
   const [period, setPeriod] = useState<Period>("month");
   const [locationId, setLocationId] = useState("");
   const [locations, setLocations] = useState<{ id: string; code: string; name: string }[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
+
+  const motivationalMessage = useMemo(
+    () => MOTIVATIONAL_MESSAGES[Math.floor(Math.random() * MOTIVATIONAL_MESSAGES.length)],
+    []
+  );
 
   // Data states
   const [summary, setSummary] = useState<Record<string, number> | null>(null);
@@ -43,7 +96,6 @@ export default function DashboardPage() {
   const [loadingCharts, setLoadingCharts] = useState(true);
   const [loadingFeed, setLoadingFeed] = useState(true);
 
-  // Load locations
   useEffect(() => {
     fetch("/api/locations")
       .then((r) => r.json())
@@ -53,12 +105,10 @@ export default function DashboardPage() {
       .catch(() => {});
   }, []);
 
-  // Fetch dashboard data
   const fetchDashboard = useCallback(async () => {
     const params = new URLSearchParams({ period });
     if (locationId) params.set("locationId", locationId);
 
-    // Fetch summary + alerts in parallel (fast)
     setLoadingSummary(true);
     Promise.all([
       fetch(`/api/dashboard?type=summary&${params}`).then((r) => r.json()),
@@ -71,7 +121,6 @@ export default function DashboardPage() {
       .catch(() => {})
       .finally(() => setLoadingSummary(false));
 
-    // Fetch charts in parallel
     setLoadingCharts(true);
     Promise.all([
       fetch(`/api/dashboard?type=cashflow&${params}`).then((r) => r.json()),
@@ -90,7 +139,6 @@ export default function DashboardPage() {
       .catch(() => {})
       .finally(() => setLoadingCharts(false));
 
-    // Fetch feed
     setLoadingFeed(true);
     fetch(`/api/dashboard?type=recent&${params}`)
       .then((r) => r.json())
@@ -105,7 +153,6 @@ export default function DashboardPage() {
     fetchDashboard();
   }, [fetchDashboard]);
 
-  // Auto-refresh every 60 seconds
   useEffect(() => {
     const interval = setInterval(fetchDashboard, 60000);
     return () => clearInterval(interval);
@@ -118,23 +165,41 @@ export default function DashboardPage() {
   };
 
   const periodLabels: Record<Period, string> = {
-    month: "Luna curenta",
+    month: "Luna curentă",
     quarter: "Trimestru",
     year: "An curent",
   };
 
   return (
     <div className="space-y-6">
-      {/* Header with filters */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h2 className="text-xl font-semibold text-[#2D1B0E]">Dashboard</h2>
-          <p className="mt-0.5 text-xs text-[#9B8B7F]">
-            Sumar general — {periodLabels[period]}
-          </p>
+      {/* Greeting Card */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#5C3D2E] via-[#6F4E37] to-[#C4A882] p-8 text-white shadow-xl">
+        {/* Decorative background elements */}
+        <div className="absolute -right-6 -top-6 h-32 w-32 rounded-full bg-white/5" />
+        <div className="absolute -bottom-4 -right-4 h-24 w-24 rounded-full bg-white/5" />
+        <div className="absolute bottom-6 right-8 text-6xl opacity-10">&#9749;</div>
+
+        <div className="relative flex items-start gap-5">
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/15 text-2xl backdrop-blur-sm">
+            &#9749;
+          </div>
+          <div className="min-w-0 flex-1">
+            <h2 className="text-2xl font-bold tracking-tight">
+              {getGreeting()}, Moro! &#9749;
+            </h2>
+            <p className="mt-2 text-base leading-relaxed text-white/80">
+              {motivationalMessage}
+            </p>
+          </div>
         </div>
+      </div>
+
+      {/* Filters row */}
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <p className="text-xs text-[#9B8B7F]">
+          Sumar general &mdash; {periodLabels[period]}
+        </p>
         <div className="flex flex-wrap items-center gap-2">
-          {/* Period selector */}
           <div className="flex rounded-lg bg-gray-100 p-0.5">
             {(["month", "quarter", "year"] as Period[]).map((p) => (
               <button
@@ -151,19 +216,17 @@ export default function DashboardPage() {
             ))}
           </div>
 
-          {/* Location filter */}
           <select
             value={locationId}
             onChange={(e) => setLocationId(e.target.value)}
             className="h-8 rounded-lg border border-gray-200 bg-white px-2 text-xs"
           >
-            <option value="">Toate locatiile</option>
+            <option value="">Toate locațiile</option>
             {locations.map((l) => (
               <option key={l.id} value={l.id}>{l.name}</option>
             ))}
           </select>
 
-          {/* Refresh */}
           <Button
             variant="outline"
             size="sm"
@@ -196,10 +259,10 @@ export default function DashboardPage() {
               icon={<TrendingUp className="h-4 w-4" />}
               trend={
                 summary.revenueTrend !== undefined
-                  ? { value: summary.revenueTrend, label: "vs. perioada anterioara" }
+                  ? { value: summary.revenueTrend, label: "vs. perioada anterioară" }
                   : undefined
               }
-              subtitle={`${summary.receiptCount || 0} incasari`}
+              subtitle={`${summary.receiptCount || 0} încasări`}
             />
             <StatCard
               title="Cheltuieli"
@@ -213,12 +276,12 @@ export default function DashboardPage() {
               icon={<Wallet className="h-4 w-4" />}
               subtitle={
                 summary.revenue > 0
-                  ? `Marja: ${Math.round(((summary.netProfit || 0) / summary.revenue) * 100)}%`
+                  ? `Marjă: ${Math.round(((summary.netProfit || 0) / summary.revenue) * 100)}%`
                   : undefined
               }
             />
             <StatCard
-              title="Restante"
+              title="Restanțe"
               value={formatCurrency(
                 (summary.outstandingPayables || 0) + (summary.outstandingReceivables || 0)
               )}
