@@ -5,9 +5,12 @@ import { readMappedRows, parseDateFlexible } from "@/lib/excel";
 import { importCommitRequestSchema } from "@/lib/validations/incoming-invoice";
 import { MONTHS_RO } from "@/lib/utils";
 
+// Allow up to 5 minutes for large imports
+export const maxDuration = 300;
+
 /**
  * POST /api/import/commit
- * Bulk insert mapped data using Prisma transactions.
+ * Bulk insert mapped data using Prisma createMany for speed.
  * Return success/error count.
  */
 export async function POST(request: NextRequest) {
@@ -54,12 +57,52 @@ export async function POST(request: NextRequest) {
     });
     const existingNumbers = new Set(existingInvoices.map((i) => i.invoiceNumber));
 
-    let successCount = 0;
     let skipCount = 0;
     let errorCount = 0;
     const importErrors: { row: number; message: string }[] = [...parseErrors];
 
-    // Process rows individually (no wrapping transaction to avoid timeout on large imports)
+    // --- Pass 1: create any missing suppliers upfront ---
+    const newSupplierNames = new Set<string>();
+    for (const row of rows) {
+      const name = String(row.supplierName ?? "").trim() || "NA";
+      if (!supplierMap.has(name.toUpperCase())) {
+        newSupplierNames.add(name);
+      }
+    }
+    for (const name of newSupplierNames) {
+      const newSupplier = await prisma.supplier.create({
+        data: { name },
+      });
+      supplierMap.set(name.toUpperCase(), newSupplier.id);
+    }
+
+    // --- Pass 2: prepare all records in memory ---
+    interface InvoiceRecord {
+      locationId: string;
+      year: number;
+      month: string;
+      plCategory: string;
+      category: string;
+      subcategory: string | null;
+      invoiceNumber: string;
+      supplierId: string;
+      issueDate: string | null;
+      issueDateParsed: Date | null;
+      dueDate: Date | null;
+      amountExVat: number;
+      vatAmount: number;
+      totalAmount: number;
+      status: string;
+      paidAmount: number;
+      paymentYear: number | null;
+      paymentMonth: string | null;
+      paymentDay: number | null;
+      remainingAmount: number;
+      notes: string | null;
+    }
+
+    const recordsToInsert: InvoiceRecord[] = [];
+
     for (const row of rows) {
       const rowIdx = (row._rowIndex as number) || 0;
 
@@ -76,7 +119,14 @@ export async function POST(request: NextRequest) {
             skipCount++;
             continue;
           }
-          // "rename" strategy: append suffix below
+          // "rename" strategy: append suffix
+          if (duplicateStrategy === "rename") {
+            let suffix = 1;
+            while (existingNumbers.has(`${invoiceNumber}-${suffix}`)) {
+              suffix++;
+            }
+            invoiceNumber = `${invoiceNumber}-${suffix}`;
+          }
         }
 
         // Resolve location — fallback to first available location
@@ -102,65 +152,50 @@ export async function POST(request: NextRequest) {
           continue;
         }
 
-        // Resolve or create supplier — fallback to "NA"
+        // Resolve supplier
         const supplierName = String(row.supplierName ?? "").trim() || "NA";
-        let supplierId = supplierMap.get(supplierName.toUpperCase());
+        const supplierId = supplierMap.get(supplierName.toUpperCase());
         if (!supplierId) {
-          const newSupplier = await prisma.supplier.create({
-            data: { name: supplierName },
-          });
-          supplierId = newSupplier.id;
-          supplierMap.set(supplierName.toUpperCase(), supplierId);
+          importErrors.push({ row: rowIdx, message: "Furnizor lipseste" });
+          errorCount++;
+          continue;
         }
 
         // Parse dates
         const issueDateRaw = row.issueDate;
         const parsedIssueDate = parseDateFlexible(issueDateRaw);
-        const dueDateRaw = row.dueDate;
-        const parsedDueDate = parseDateFlexible(dueDateRaw);
+        const parsedDueDate = parseDateFlexible(row.dueDate);
 
-        // Use year/month from Excel, fallback to issue date, fallback to current
+        // Year/month from Excel, fallback to issue date, fallback to current
         let year = Number(row.year) || 0;
-        if (!year && parsedIssueDate) {
-          year = parsedIssueDate.getFullYear();
-        }
-        if (!year) {
-          year = new Date().getFullYear();
-        }
+        if (!year && parsedIssueDate) year = parsedIssueDate.getFullYear();
+        if (!year) year = new Date().getFullYear();
 
         let month = String(row.month ?? "").trim().toUpperCase();
         if (!month && parsedIssueDate) {
-          const monthIdx = parsedIssueDate.getMonth();
-          month = MONTHS_RO[monthIdx];
+          month = MONTHS_RO[parsedIssueDate.getMonth()];
         }
-        if (!month) {
-          month = "NA";
-        }
+        if (!month) month = "NA";
 
         // P&L fields — fallback to "NA"
         const plCategory = String(row.plCategory ?? "").trim().toUpperCase() || "NA";
         const category = String(row.category ?? "").trim().toUpperCase() || "NA";
-        const subcategory = row.subcategory
-          ? String(row.subcategory).trim()
-          : "NA";
+        const subcategory = row.subcategory ? String(row.subcategory).trim() : "NA";
 
-        // Parse amounts from Excel — use actual values
+        // Amounts
         const totalAmount = Number(row.totalAmount) || 0;
         let amountExVat = Number(row.amountExVat) || 0;
         let vatAmount = Number(row.vatAmount) || 0;
 
-        // Fallback: calculate VAT only if both are 0 but total > 0
         if (amountExVat === 0 && vatAmount === 0 && totalAmount > 0) {
           const vatRate = 0.19;
           amountExVat = +(totalAmount / (1 + vatRate)).toFixed(2);
           vatAmount = +(totalAmount - amountExVat).toFixed(2);
         }
 
-        // Use actual paid/remaining from Excel
         const paidAmount = Number(row.paidAmount) || 0;
         const remainingAmount = Number(row.remainingAmount) || 0;
 
-        // Derive status from amounts
         let status = "UNPAID";
         if (paidAmount > 0 && paidAmount >= totalAmount) {
           status = "PAID";
@@ -168,57 +203,72 @@ export async function POST(request: NextRequest) {
           status = "PARTIAL";
         }
 
-        // Payment date fields from Excel
         const paymentYear = Number(row.paymentYear) || null;
         const paymentMonth = row.paymentMonth
           ? String(row.paymentMonth).trim().toUpperCase()
           : null;
         const paymentDay = Number(row.paymentDay) || null;
 
-        // Handle rename strategy for duplicates
-        let finalInvoiceNumber = invoiceNumber;
-        if (existingNumbers.has(invoiceNumber) && duplicateStrategy === "rename") {
-          let suffix = 1;
-          while (existingNumbers.has(`${invoiceNumber}-${suffix}`)) {
-            suffix++;
-          }
-          finalInvoiceNumber = `${invoiceNumber}-${suffix}`;
-        }
+        existingNumbers.add(invoiceNumber);
 
-        await prisma.incomingInvoice.create({
-          data: {
-            locationId,
-            year,
-            month,
-            plCategory,
-            category,
-            subcategory,
-            invoiceNumber: finalInvoiceNumber,
-            supplierId,
-            issueDate: issueDateRaw != null ? String(issueDateRaw) : "NA",
-            issueDateParsed: parsedIssueDate,
-            dueDate: parsedDueDate,
-            amountExVat,
-            vatAmount,
-            totalAmount,
-            status,
-            paidAmount,
-            paymentYear,
-            paymentMonth,
-            paymentDay,
-            remainingAmount,
-            notes: row.notes ? String(row.notes) : "NA",
-          },
+        recordsToInsert.push({
+          locationId,
+          year,
+          month,
+          plCategory,
+          category,
+          subcategory,
+          invoiceNumber,
+          supplierId,
+          issueDate: issueDateRaw != null ? String(issueDateRaw) : "NA",
+          issueDateParsed: parsedIssueDate,
+          dueDate: parsedDueDate,
+          amountExVat,
+          vatAmount,
+          totalAmount,
+          status,
+          paidAmount,
+          paymentYear,
+          paymentMonth,
+          paymentDay,
+          remainingAmount,
+          notes: row.notes ? String(row.notes) : "NA",
         });
-
-        existingNumbers.add(finalInvoiceNumber);
-        successCount++;
       } catch (err) {
         importErrors.push({
           row: rowIdx,
           message: err instanceof Error ? err.message : "Eroare necunoscuta",
         });
         errorCount++;
+      }
+    }
+
+    // --- Pass 3: batch insert in chunks of 500 ---
+    const BATCH_SIZE = 500;
+    let successCount = 0;
+
+    for (let i = 0; i < recordsToInsert.length; i += BATCH_SIZE) {
+      const batch = recordsToInsert.slice(i, i + BATCH_SIZE);
+      try {
+        const result = await prisma.incomingInvoice.createMany({
+          data: batch,
+          skipDuplicates: true,
+        });
+        successCount += result.count;
+      } catch (err) {
+        // If batch fails, fall back to individual inserts for this batch
+        for (const record of batch) {
+          try {
+            await prisma.incomingInvoice.create({ data: record });
+            successCount++;
+          } catch (innerErr) {
+            importErrors.push({
+              row: 0,
+              message: `${record.invoiceNumber}: ${innerErr instanceof Error ? innerErr.message : "Eroare"}`,
+            });
+            errorCount++;
+          }
+        }
       }
     }
 
