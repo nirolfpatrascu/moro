@@ -13,6 +13,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     signIn: "/login",
     error: "/login",
   },
+  trustHost: true,
   callbacks: {
     async signIn({ user }) {
       if (!user.email) return false;
@@ -28,11 +29,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (envEmails.includes(email)) return true;
 
       // Check database whitelist
-      const allowed = await prisma.allowedEmail.findUnique({
-        where: { email },
-      });
-
-      return !!allowed;
+      try {
+        const allowed = await prisma.allowedEmail.findUnique({
+          where: { email },
+        });
+        return !!allowed;
+      } catch (err) {
+        console.error("DB whitelist check failed:", err);
+        // If DB is unreachable, fall back to env-only whitelist
+        return false;
+      }
     },
     async session({ session }) {
       return session;
