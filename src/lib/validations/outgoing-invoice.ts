@@ -16,7 +16,6 @@ export const outgoingInvoiceCreateSchema = z.object({
   paymentYear: z.coerce.number().optional().nullable(),
   paymentMonth: z.string().optional().nullable(),
   paymentDay: z.coerce.number().optional().nullable(),
-  itemDescription: z.string().optional().nullable(),
   notes: z.string().optional().nullable(),
 });
 
