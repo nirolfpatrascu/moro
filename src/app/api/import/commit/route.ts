@@ -78,8 +78,7 @@ export async function POST(request: NextRequest) {
               skipCount++;
               continue;
             }
-            // "rename" strategy: append suffix
-            // Will be handled by finding a unique name
+            // "rename" strategy: append suffix below
           }
 
           // Resolve location
@@ -123,40 +122,66 @@ export async function POST(request: NextRequest) {
           }
 
           // Parse dates
-          const issueDateRaw = row.date;
+          const issueDateRaw = row.issueDate;
           const parsedIssueDate = parseDateFlexible(issueDateRaw);
           const dueDateRaw = row.dueDate;
           const parsedDueDate = parseDateFlexible(dueDateRaw);
 
-          // Derive year/month from issue date
-          const year = parsedIssueDate
-            ? parsedIssueDate.getFullYear()
-            : new Date().getFullYear();
-          const monthIdx = parsedIssueDate ? parsedIssueDate.getMonth() : 0;
-          const month = MONTHS_RO[monthIdx];
-
-          // Parse amounts
-          const totalAmount = Number(row.total) || 0;
-          const qty = Number(row.qty) || 0;
-          const unitPrice = Number(row.unitPrice) || 0;
-
-          // Derive financial fields
-          const vatRate = 0.19;
-          const amountExVat = +(totalAmount / (1 + vatRate)).toFixed(2);
-          const vatAmount = +(totalAmount - amountExVat).toFixed(2);
-
-          // Derive status
-          const statusRaw = String(row.status ?? "Unpaid").trim().toUpperCase();
-          let status = "UNPAID";
-          let paidAmount = 0;
-          if (statusRaw.includes("PAID") && !statusRaw.includes("UN")) {
-            status = "PAID";
-            paidAmount = totalAmount;
-          } else if (statusRaw.includes("PARTIAL")) {
-            status = "PARTIAL";
-            paidAmount = totalAmount / 2; // best guess
+          // Use year/month from Excel, fallback to issue date, fallback to current
+          let year = Number(row.year) || 0;
+          if (!year && parsedIssueDate) {
+            year = parsedIssueDate.getFullYear();
           }
-          const remainingAmount = totalAmount - paidAmount;
+          if (!year) {
+            year = new Date().getFullYear();
+          }
+
+          let month = String(row.month ?? "").trim().toUpperCase();
+          if (!month && parsedIssueDate) {
+            const monthIdx = parsedIssueDate.getMonth();
+            month = MONTHS_RO[monthIdx];
+          }
+          if (!month) {
+            month = MONTHS_RO[0];
+          }
+
+          // Use actual P&L fields from Excel
+          const plCategory = String(row.plCategory ?? "COGS").trim().toUpperCase() || "COGS";
+          const category = String(row.category ?? "GENERAL").trim().toUpperCase() || "GENERAL";
+          const subcategory = row.subcategory
+            ? String(row.subcategory).trim()
+            : null;
+
+          // Parse amounts from Excel — use actual values
+          const totalAmount = Number(row.totalAmount) || 0;
+          let amountExVat = Number(row.amountExVat) || 0;
+          let vatAmount = Number(row.vatAmount) || 0;
+
+          // Fallback: calculate VAT only if both are 0 but total > 0
+          if (amountExVat === 0 && vatAmount === 0 && totalAmount > 0) {
+            const vatRate = 0.19;
+            amountExVat = +(totalAmount / (1 + vatRate)).toFixed(2);
+            vatAmount = +(totalAmount - amountExVat).toFixed(2);
+          }
+
+          // Use actual paid/remaining from Excel
+          const paidAmount = Number(row.paidAmount) || 0;
+          const remainingAmount = Number(row.remainingAmount) || 0;
+
+          // Derive status from amounts
+          let status = "UNPAID";
+          if (paidAmount > 0 && paidAmount >= totalAmount) {
+            status = "PAID";
+          } else if (paidAmount > 0) {
+            status = "PARTIAL";
+          }
+
+          // Payment date fields from Excel
+          const paymentYear = Number(row.paymentYear) || null;
+          const paymentMonth = row.paymentMonth
+            ? String(row.paymentMonth).trim().toUpperCase()
+            : null;
+          const paymentDay = Number(row.paymentDay) || null;
 
           // Handle rename strategy for duplicates
           let finalInvoiceNumber = invoiceNumber;
@@ -173,23 +198,22 @@ export async function POST(request: NextRequest) {
               locationId,
               year,
               month,
-              plCategory: "COGS",
-              category: "GENERAL",
+              plCategory,
+              category,
+              subcategory,
               invoiceNumber: finalInvoiceNumber,
               supplierId,
               issueDate: issueDateRaw != null ? String(issueDateRaw) : null,
               issueDateParsed: parsedIssueDate,
               dueDate: parsedDueDate,
-              itemDescription: row.itemDescription
-                ? String(row.itemDescription)
-                : null,
-              qty,
-              unitPrice,
               amountExVat,
               vatAmount,
               totalAmount,
               status,
               paidAmount,
+              paymentYear,
+              paymentMonth,
+              paymentDay,
               remainingAmount,
               notes: row.notes ? String(row.notes) : null,
             },
