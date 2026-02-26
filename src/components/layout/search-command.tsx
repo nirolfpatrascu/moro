@@ -102,7 +102,7 @@ export function SearchCommand() {
         <input
           ref={inputRef}
           type="text"
-          placeholder="Cauta... (Ctrl+K)"
+          placeholder=""
           value={query}
           onChange={(e) => {
             setQuery(e.target.value);
