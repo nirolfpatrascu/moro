@@ -22,6 +22,7 @@ model Location {
   dailyIncomes     DailyIncome[]
   incomingInvoices IncomingInvoice[]
   outgoingInvoices OutgoingInvoice[]
+  receipts         Receipt[]
   employees        Employee[]
   monthlyPnl       MonthlyPnL[]
   monthlyCashFlow  MonthlyCashFlow[]
@@ -73,6 +74,32 @@ model DailyIncome {
   @@unique([locationId, date])
   @@index([year, month])
   @@index([date])
+}
+
+// ============================================================
+// INPUT: RECEIPTS — Individual transactions (bonuri / incasari)
+// ============================================================
+model Receipt {
+  id              String   @id @default(cuid())
+  locationId      String
+  date            DateTime
+  type            String   @default("SALE")        // SALE, REFUND, EXPENSE
+  description     String?
+  category        String?                           // BAR, BUCATARIE, DIVERSE
+  amount          Float    @default(0)
+  paymentMethod   String   @default("CASH")        // CASH, CARD, TRANSFER
+  receiptNumber   String?
+  notes           String?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  location Location @relation(fields: [locationId], references: [id])
+
+  @@index([locationId])
+  @@index([date])
+  @@index([type])
+  @@index([paymentMethod])
 }
 
 // ============================================================
