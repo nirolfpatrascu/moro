@@ -20,6 +20,7 @@ import {
   Coffee,
   Upload,
   Settings,
+  HelpCircle,
 } from "lucide-react";
 
 const navItems = [
@@ -38,6 +39,7 @@ const navItems = [
   { label: "Locatii", href: "/locations", icon: MapPin },
   { type: "separator" as const, label: "" },
   { label: "Setari", href: "/settings", icon: Settings },
+  { label: "Ajutor", href: "/help", icon: HelpCircle },
 ];
 
 export function Sidebar() {

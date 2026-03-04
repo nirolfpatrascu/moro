@@ -3,6 +3,7 @@ import { prisma, serializeDecimal } from "@/lib/prisma";
 import { receiptUpdateSchema } from "@/lib/validations/receipt";
 import { parseDateFlexible } from "@/lib/excel";
 import { requireAuth } from "@/lib/auth-guard";
+import { logger } from "@/lib/logger";
 
 type RouteParams = { params: Promise<{ id: string }> };
 
@@ -28,7 +29,7 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json(serializeDecimal(receipt));
   } catch (error) {
-    console.error("Get receipt error:", error);
+    logger.error("Get receipt error", { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json({ error: "Eroare la incarcarea incasarii" }, { status: 500 });
   }
 }
@@ -83,7 +84,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json(serializeDecimal(receipt));
   } catch (error) {
-    console.error("Update receipt error:", error);
+    logger.error("Update receipt error", { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json({ error: "Eroare la actualizarea incasarii" }, { status: 500 });
   }
 }
@@ -106,7 +107,7 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
     await prisma.receipt.delete({ where: { id } });
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Delete receipt error:", error);
+    logger.error("Delete receipt error", { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json({ error: "Eroare la stergerea incasarii" }, { status: 500 });
   }
 }

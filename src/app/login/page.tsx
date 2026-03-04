@@ -21,7 +21,10 @@ function LoginForm() {
             </div>
             <div className="text-center">
               <h1 className="text-2xl font-bold text-[#2D1B0E]">Moro Coffee</h1>
-              <p className="mt-1 text-sm text-[#9B8B7F]">Manager</p>
+              <p className="mt-1 text-sm text-[#9B8B7F]">Manager Financiar</p>
+              <p className="mt-2 text-xs text-[#B8A99A]">
+                Facturi, incasari, P&L si cash flow — totul intr-un singur loc.
+              </p>
             </div>
           </div>
 

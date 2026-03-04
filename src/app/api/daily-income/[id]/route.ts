@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma, serializeDecimal } from "@/lib/prisma";
 import { dailyIncomeUpdateSchema } from "@/lib/validations/daily-income";
 import { requireAuth } from "@/lib/auth-guard";
+import { logger } from "@/lib/logger";
+import { invalidateCache } from "@/lib/cache";
 
 /**
  * GET /api/daily-income/[id]
@@ -25,7 +27,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
 
     return NextResponse.json(serializeDecimal(record));
   } catch (error) {
-    console.error("Get daily income error:", error);
+    logger.error("Get daily income error", { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json({ error: "Eroare la incarcarea inregistrarii" }, { status: 500 });
   }
 }
@@ -101,9 +103,10 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       },
     });
 
+    invalidateCache("dashboard:");
     return NextResponse.json(serializeDecimal(record));
   } catch (error: unknown) {
-    console.error("Update daily income error:", error);
+    logger.error("Update daily income error", { error: error instanceof Error ? error.message : String(error) });
     if (
       typeof error === "object" &&
       error !== null &&
@@ -141,7 +144,7 @@ export async function DELETE(
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Delete daily income error:", error);
+    logger.error("Delete daily income error", { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json({ error: "Eroare la stergerea inregistrarii" }, { status: 500 });
   }
 }

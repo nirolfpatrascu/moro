@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod/v4";
 import { requireAuth } from "@/lib/auth-guard";
+import { logger } from "@/lib/logger";
 
 const updateSupplierSchema = z.object({
   name: z.string().min(1, "Numele furnizorului este obligatoriu"),
@@ -51,7 +52,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json(supplier);
   } catch (error) {
-    console.error("Update supplier error:", error);
+    logger.error("Update supplier error", { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json({ error: "Eroare la actualizarea furnizorului" }, { status: 500 });
   }
 }
@@ -85,7 +86,7 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Delete supplier error:", error);
+    logger.error("Delete supplier error", { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json({ error: "Eroare la stergerea furnizorului" }, { status: 500 });
   }
 }

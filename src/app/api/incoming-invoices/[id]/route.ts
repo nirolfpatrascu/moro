@@ -8,6 +8,8 @@ import { parseDateFlexible } from "@/lib/excel";
 import { MONTHS_RO } from "@/lib/utils";
 import { VAT_MULTIPLIER } from "@/lib/constants";
 import { requireAuth } from "@/lib/auth-guard";
+import { logger } from "@/lib/logger";
+import { invalidateCache } from "@/lib/cache";
 
 type RouteParams = { params: Promise<{ id: string }> };
 
@@ -34,7 +36,7 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json(serializeDecimal(invoice));
   } catch (error) {
-    console.error("Get incoming invoice error:", error);
+    logger.error("Get incoming invoice error", { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json({ error: "Eroare la incarcarea facturii" }, { status: 500 });
   }
 }
@@ -140,9 +142,10 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       },
     });
 
+    invalidateCache("dashboard:");
     return NextResponse.json(serializeDecimal(invoice));
   } catch (error) {
-    console.error("Update incoming invoice error:", error);
+    logger.error("Update incoming invoice error", { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json({ error: "Eroare la actualizarea facturii" }, { status: 500 });
   }
 }
@@ -204,9 +207,10 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       },
     });
 
+    invalidateCache("dashboard:");
     return NextResponse.json(serializeDecimal(invoice));
   } catch (error) {
-    console.error("Patch incoming invoice status error:", error);
+    logger.error("Patch incoming invoice status error", { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json({ error: "Eroare la actualizarea statusului" }, { status: 500 });
   }
 }
@@ -232,7 +236,7 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Delete incoming invoice error:", error);
+    logger.error("Delete incoming invoice error", { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json({ error: "Eroare la stergerea facturii" }, { status: 500 });
   }
 }

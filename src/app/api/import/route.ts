@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { parseExcelSheets } from "@/lib/excel";
 import { requireAuth } from "@/lib/auth-guard";
 import { rateLimit } from "@/lib/rate-limit";
+import { logger } from "@/lib/logger";
 
 /**
  * POST /api/import
@@ -51,7 +52,7 @@ export async function POST(request: NextRequest) {
       fileData,
     });
   } catch (error) {
-    console.error("Import upload error:", error);
+    logger.error("Import upload error", { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json({ error: "Eroare la procesarea fisierului" }, { status: 500 });
   }
 }

@@ -7,6 +7,8 @@ import { MONTHS_RO } from "@/lib/utils";
 import { VAT_MULTIPLIER } from "@/lib/constants";
 import { requireAuth } from "@/lib/auth-guard";
 import { rateLimit } from "@/lib/rate-limit";
+import { logger } from "@/lib/logger";
+import { invalidateCache } from "@/lib/cache";
 
 // Allow up to 5 minutes for large imports
 export const maxDuration = 300;
@@ -295,6 +297,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    invalidateCache("dashboard:");
     return NextResponse.json({
       success: successCount,
       skipped: skipCount,
@@ -303,7 +306,7 @@ export async function POST(request: NextRequest) {
       errorDetails: importErrors,
     });
   } catch (error) {
-    console.error("Import commit error:", error);
+    logger.error("Import commit error", { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json({ error: "Eroare la importul datelor" }, { status: 500 });
   }
 }

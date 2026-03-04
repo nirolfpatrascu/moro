@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma, serializeDecimal } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth-guard";
+import { logger } from "@/lib/logger";
 
 export async function GET(request: NextRequest) {
   try {
@@ -122,7 +123,7 @@ export async function GET(request: NextRequest) {
       }),
     );
   } catch (error) {
-    console.error("Search error:", error);
+    logger.error("Search error", { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json({ error: "Eroare la cautare" }, { status: 500 });
   }
 }

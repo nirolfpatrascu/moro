@@ -4,6 +4,9 @@ import { readIncomeRows } from "@/lib/excel";
 import { incomeImportRequestSchema } from "@/lib/validations/daily-income";
 import { requireAuth } from "@/lib/auth-guard";
 import { rateLimit } from "@/lib/rate-limit";
+import { logger } from "@/lib/logger";
+
+export const maxDuration = 60;
 
 /**
  * POST /api/import/preview-income
@@ -55,7 +58,7 @@ export async function POST(request: NextRequest) {
       totalPreview: rows.length,
     });
   } catch (error) {
-    console.error("Income preview error:", error);
+    logger.error("Income preview error", { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json({ error: "Eroare la previzualizare incasari" }, { status: 500 });
   }
 }

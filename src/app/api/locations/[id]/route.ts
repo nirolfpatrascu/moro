@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod/v4";
 import { requireAuth } from "@/lib/auth-guard";
+import { logger } from "@/lib/logger";
 
 const updateLocationSchema = z.object({
   name: z.string().min(1, "Numele locatiei este obligatoriu").optional(),
@@ -66,7 +67,7 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
       },
     });
   } catch (error) {
-    console.error("Get location error:", error);
+    logger.error("Get location error", { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json({ error: "Eroare la incarcarea locatiei" }, { status: 500 });
   }
 }
@@ -132,7 +133,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json(location);
   } catch (error) {
-    console.error("Update location error:", error);
+    logger.error("Update location error", { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json({ error: "Eroare la actualizarea locatiei" }, { status: 500 });
   }
 }
@@ -177,7 +178,7 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Delete location error:", error);
+    logger.error("Delete location error", { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json({ error: "Eroare la stergerea locatiei" }, { status: 500 });
   }
 }

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod/v4";
 import { requireAuth } from "@/lib/auth-guard";
+import { logger } from "@/lib/logger";
 
 const updateCustomerSchema = z.object({
   name: z.string().min(1, "Numele clientului este obligatoriu"),
@@ -53,7 +54,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json(customer);
   } catch (error) {
-    console.error("Update customer error:", error);
+    logger.error("Update customer error", { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json({ error: "Eroare la actualizarea clientului" }, { status: 500 });
   }
 }
@@ -89,7 +90,7 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Delete customer error:", error);
+    logger.error("Delete customer error", { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json({ error: "Eroare la stergerea clientului" }, { status: 500 });
   }
 }

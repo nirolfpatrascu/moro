@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth-guard";
+import { logger } from "@/lib/logger";
 
 export async function GET() {
   try {
@@ -13,7 +14,7 @@ export async function GET() {
     });
     return NextResponse.json(locations);
   } catch (error) {
-    console.error("List locations error:", error);
+    logger.error("List locations error", { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json({ error: "Eroare la incarcarea locatiilor" }, { status: 500 });
   }
 }

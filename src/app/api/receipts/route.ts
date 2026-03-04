@@ -3,6 +3,7 @@ import { prisma, serializeDecimal } from "@/lib/prisma";
 import { receiptCreateSchema } from "@/lib/validations/receipt";
 import { parseDateFlexible } from "@/lib/excel";
 import { requireAuth } from "@/lib/auth-guard";
+import { logger } from "@/lib/logger";
 
 /**
  * GET /api/receipts
@@ -99,7 +100,7 @@ export async function GET(request: NextRequest) {
       }),
     );
   } catch (error) {
-    console.error("List receipts error:", error);
+    logger.error("List receipts error", { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json({ error: "Eroare la incarcarea incasarilor" }, { status: 500 });
   }
 }
@@ -145,7 +146,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(serializeDecimal(receipt), { status: 201 });
   } catch (error) {
-    console.error("Create receipt error:", error);
+    logger.error("Create receipt error", { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json({ error: "Eroare la crearea incasarii" }, { status: 500 });
   }
 }

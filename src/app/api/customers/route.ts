@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod/v4";
 import { requireAuth } from "@/lib/auth-guard";
+import { logger } from "@/lib/logger";
 
 const createCustomerSchema = z.object({
   name: z.string().min(1, "Numele clientului este obligatoriu"),
@@ -18,7 +19,7 @@ export async function GET() {
     });
     return NextResponse.json(customers);
   } catch (error) {
-    console.error("List customers error:", error);
+    logger.error("List customers error", { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json({ error: "Eroare la incarcarea clientilor" }, { status: 500 });
   }
 }
@@ -53,7 +54,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(customer, { status: 201 });
   } catch (error) {
-    console.error("Create customer error:", error);
+    logger.error("Create customer error", { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json({ error: "Eroare la crearea clientului" }, { status: 500 });
   }
 }

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma, serializeDecimal } from "@/lib/prisma";
 import { dailyIncomeCreateSchema } from "@/lib/validations/daily-income";
 import { requireAuth } from "@/lib/auth-guard";
+import { logger } from "@/lib/logger";
+import { invalidateCache } from "@/lib/cache";
 
 /**
  * GET /api/daily-income
@@ -77,7 +79,7 @@ export async function GET(request: NextRequest) {
       }),
     );
   } catch (error) {
-    console.error("List daily income error:", error);
+    logger.error("List daily income error", { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: "Eroare la incarcarea incasarilor zilnice" },
       { status: 500 },
@@ -147,9 +149,10 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    invalidateCache("dashboard:");
     return NextResponse.json(serializeDecimal(record), { status: 201 });
   } catch (error: unknown) {
-    console.error("Create daily income error:", error);
+    logger.error("Create daily income error", { error: error instanceof Error ? error.message : String(error) });
     if (
       typeof error === "object" &&
       error !== null &&

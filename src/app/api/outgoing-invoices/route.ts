@@ -8,6 +8,8 @@ import { parseDateFlexible } from "@/lib/excel";
 import { MONTHS_RO } from "@/lib/utils";
 import { VAT_MULTIPLIER } from "@/lib/constants";
 import { requireAuth } from "@/lib/auth-guard";
+import { logger } from "@/lib/logger";
+import { invalidateCache } from "@/lib/cache";
 
 /**
  * GET /api/outgoing-invoices
@@ -67,7 +69,7 @@ export async function GET(request: NextRequest) {
       }),
     );
   } catch (error) {
-    console.error("List outgoing invoices error:", error);
+    logger.error("List outgoing invoices error", { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json({ error: "Eroare la incarcarea facturilor" }, { status: 500 });
   }
 }
@@ -135,9 +137,10 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    invalidateCache("dashboard:");
     return NextResponse.json(serializeDecimal(invoice), { status: 201 });
   } catch (error) {
-    console.error("Create outgoing invoice error:", error);
+    logger.error("Create outgoing invoice error", { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json({ error: "Eroare la crearea facturii" }, { status: 500 });
   }
 }
@@ -199,7 +202,7 @@ export async function PATCH(request: NextRequest) {
       updated: ids.length,
     });
   } catch (error) {
-    console.error("Bulk status update error:", error);
+    logger.error("Bulk status update error", { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json({ error: "Eroare la actualizarea in masa" }, { status: 500 });
   }
 }

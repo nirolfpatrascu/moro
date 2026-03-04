@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod/v4";
 import { requireAuth } from "@/lib/auth-guard";
+import { logger } from "@/lib/logger";
 
 const createSupplierSchema = z.object({
   name: z.string().min(1, "Numele furnizorului este obligatoriu"),
@@ -18,7 +19,7 @@ export async function GET() {
     });
     return NextResponse.json(suppliers);
   } catch (error) {
-    console.error("List suppliers error:", error);
+    logger.error("List suppliers error", { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json({ error: "Eroare la incarcarea furnizorilor" }, { status: 500 });
   }
 }
@@ -54,7 +55,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(supplier, { status: 201 });
   } catch (error) {
-    console.error("Create supplier error:", error);
+    logger.error("Create supplier error", { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json({ error: "Eroare la crearea furnizorului" }, { status: 500 });
   }
 }

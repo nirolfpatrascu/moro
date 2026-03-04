@@ -3,6 +3,10 @@ import { prisma, serializeDecimal } from "@/lib/prisma";
 import { MONTHS_RO, monthIndex } from "@/lib/utils";
 import { requireAuth } from "@/lib/auth-guard";
 import { COGS_CATS, PEOPLE_CATS, OPEX_CATS, COSTFIX_CATS, TAXE_CATS } from "@/lib/constants";
+import { logger } from "@/lib/logger";
+import { cached } from "@/lib/cache";
+
+export const maxDuration = 30;
 
 /**
  * GET /api/dashboard?type=summary|cashflow|by-location|by-category|aging|recent|alerts
@@ -21,40 +25,68 @@ export async function GET(request: NextRequest) {
     const now = new Date();
     const { from, to } = getDateRange(period, now, searchParams);
 
+    const cacheKey = `dashboard:${type}:${period}:${locationId || "all"}:${from.getTime()}:${to.getTime()}`;
+    const TTL = 60_000; // 1 minute cache
+
     switch (type) {
       case "summary":
-        return NextResponse.json(serializeDecimal(await getSummary(from, to, locationId)));
+        return NextResponse.json(
+          serializeDecimal(await cached(cacheKey, TTL, () => getSummary(from, to, locationId))),
+        );
       case "cashflow":
-        return NextResponse.json(serializeDecimal(await getCashFlow(locationId)));
+        return NextResponse.json(
+          serializeDecimal(await cached(cacheKey, TTL, () => getCashFlow(locationId))),
+        );
       case "by-location":
-        return NextResponse.json(serializeDecimal(await getByLocation(from, to)));
+        return NextResponse.json(
+          serializeDecimal(await cached(cacheKey, TTL, () => getByLocation(from, to))),
+        );
       case "by-category":
-        return NextResponse.json(serializeDecimal(await getByCategory(from, to, locationId)));
+        return NextResponse.json(
+          serializeDecimal(await cached(cacheKey, TTL, () => getByCategory(from, to, locationId))),
+        );
       case "aging":
-        return NextResponse.json(serializeDecimal(await getAging()));
+        return NextResponse.json(
+          serializeDecimal(await cached(cacheKey, TTL, () => getAging())),
+        );
       case "recent":
         return NextResponse.json(serializeDecimal(await getRecent(locationId)));
       case "alerts":
-        return NextResponse.json(serializeDecimal(await getAlerts()));
+        return NextResponse.json(
+          serializeDecimal(await cached(cacheKey, TTL, () => getAlerts())),
+        );
       case "top-suppliers":
-        return NextResponse.json(serializeDecimal(await getTopSuppliers(from, to, locationId)));
+        return NextResponse.json(
+          serializeDecimal(
+            await cached(cacheKey, TTL, () => getTopSuppliers(from, to, locationId)),
+          ),
+        );
       case "pnl": {
         const year = parseInt(searchParams.get("year") || String(new Date().getFullYear()));
-        return NextResponse.json(serializeDecimal(await getPnl(year, locationId)));
+        const pnlKey = `dashboard:pnl:${year}:${locationId || "all"}`;
+        return NextResponse.json(
+          serializeDecimal(await cached(pnlKey, TTL, () => getPnl(year, locationId))),
+        );
       }
       case "cashflow-detail": {
         const year = parseInt(searchParams.get("year") || String(new Date().getFullYear()));
-        return NextResponse.json(serializeDecimal(await getCashFlowDetail(year, locationId)));
+        const cfKey = `dashboard:cashflow-detail:${year}:${locationId || "all"}`;
+        return NextResponse.json(
+          serializeDecimal(await cached(cfKey, TTL, () => getCashFlowDetail(year, locationId))),
+        );
       }
       case "cogs-detail": {
         const year = parseInt(searchParams.get("year") || String(new Date().getFullYear()));
-        return NextResponse.json(serializeDecimal(await getCogsDetail(year, locationId)));
+        const cogsKey = `dashboard:cogs-detail:${year}:${locationId || "all"}`;
+        return NextResponse.json(
+          serializeDecimal(await cached(cogsKey, TTL, () => getCogsDetail(year, locationId))),
+        );
       }
       default:
         return NextResponse.json({ error: "Tip necunoscut" }, { status: 400 });
     }
   } catch (error) {
-    console.error("Dashboard API error:", error);
+    logger.error("Dashboard API error", { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json({ error: "Eroare la incarcarea dashboard-ului" }, { status: 500 });
   }
 }

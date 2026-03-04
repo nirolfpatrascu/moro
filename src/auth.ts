@@ -1,6 +1,7 @@
 import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
 import { prisma } from "@/lib/prisma";
+import { logger } from "@/lib/logger";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   secret: process.env.AUTH_SECRET,
@@ -36,7 +37,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         });
         return !!allowed;
       } catch (err) {
-        console.error("DB whitelist check failed:", err);
+        logger.error("DB whitelist check failed", { error: err instanceof Error ? err.message : String(err) });
         // If DB is unreachable, fall back to env-only whitelist
         return false;
       }

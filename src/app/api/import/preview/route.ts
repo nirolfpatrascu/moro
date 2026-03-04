@@ -4,6 +4,9 @@ import { readMappedRows } from "@/lib/excel";
 import { importPreviewRequestSchema } from "@/lib/validations/incoming-invoice";
 import { requireAuth } from "@/lib/auth-guard";
 import { rateLimit } from "@/lib/rate-limit";
+import { logger } from "@/lib/logger";
+
+export const maxDuration = 60;
 
 /**
  * POST /api/import/preview
@@ -48,7 +51,7 @@ export async function POST(request: NextRequest) {
       totalPreview: rows.length,
     });
   } catch (error) {
-    console.error("Import preview error:", error);
+    logger.error("Import preview error", { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json({ error: "Eroare la previzualizare" }, { status: 500 });
   }
 }

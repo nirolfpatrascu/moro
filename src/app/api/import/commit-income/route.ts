@@ -5,6 +5,10 @@ import { readIncomeRows } from "@/lib/excel";
 import { incomeImportRequestSchema } from "@/lib/validations/daily-income";
 import { requireAuth } from "@/lib/auth-guard";
 import { rateLimit } from "@/lib/rate-limit";
+import { logger } from "@/lib/logger";
+import { invalidateCache } from "@/lib/cache";
+
+export const maxDuration = 300;
 
 /**
  * POST /api/import/commit-income
@@ -123,6 +127,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    invalidateCache("dashboard:");
     return NextResponse.json({
       success: successCount,
       updated: updatedCount,
@@ -131,7 +136,7 @@ export async function POST(request: NextRequest) {
       errorDetails: importErrors,
     });
   } catch (error) {
-    console.error("Income commit error:", error);
+    logger.error("Income commit error", { error: error instanceof Error ? error.message : String(error) });
     return NextResponse.json({ error: "Eroare la importul incasarilor" }, { status: 500 });
   }
 }
