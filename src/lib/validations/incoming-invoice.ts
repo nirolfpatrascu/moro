@@ -106,7 +106,16 @@ const AUTO_MAP_KEYWORDS: Record<string, string[]> = {
   plCategory: ["categorie p&l", "categorie p & l", "p&l", "pl categorie"],
   category: ["categorie"],
   subcategory: ["subcategorie", "sub categorie"],
-  invoiceNumber: ["nr factura", "nr. factura", "numar factura", "invoice no", "invoice number", "factura", "invoice", "nr."],
+  invoiceNumber: [
+    "nr factura",
+    "nr. factura",
+    "numar factura",
+    "invoice no",
+    "invoice number",
+    "factura",
+    "invoice",
+    "nr.",
+  ],
   supplierName: ["denumire firma", "furnizor", "supplier name", "supplier", "firma"],
   issueDate: ["data emitere", "emitere", "issue date"],
   dueDate: ["scadenta", "scadenta", "due"],
@@ -127,21 +136,17 @@ export function autoMapColumns(excelHeaders: string[]): ColumnMapping {
 
   // Sort fields by keyword specificity (longer keywords first) to avoid
   // generic keywords like "an" matching before "an plata"
-  const fieldsBySpecificity = Object.entries(AUTO_MAP_KEYWORDS).sort(
-    (a, b) => {
-      const maxA = Math.max(...a[1].map((k) => k.length));
-      const maxB = Math.max(...b[1].map((k) => k.length));
-      return maxB - maxA;
-    }
-  );
+  const fieldsBySpecificity = Object.entries(AUTO_MAP_KEYWORDS).sort((a, b) => {
+    const maxA = Math.max(...a[1].map((k) => k.length));
+    const maxB = Math.max(...b[1].map((k) => k.length));
+    return maxB - maxA;
+  });
 
   for (const [field, keywords] of fieldsBySpecificity) {
     for (const header of excelHeaders) {
       if (usedHeaders.has(header)) continue;
       const headerLower = header.toLowerCase().trim();
-      const match = keywords.some(
-        (kw) => headerLower === kw || headerLower.includes(kw)
-      );
+      const match = keywords.some((kw) => headerLower === kw || headerLower.includes(kw));
       if (match) {
         mapping[field] = header;
         usedHeaders.add(header);
@@ -185,7 +190,7 @@ export const importUploadResponseSchema = z.object({
       name: z.string(),
       headers: z.array(z.string()),
       rowCount: z.number(),
-    })
+    }),
   ),
   fileData: z.string(), // base64
 });

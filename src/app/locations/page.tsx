@@ -1,21 +1,9 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import {
-  Card,
-  CardContent,
-  Button,
-  Modal,
-} from "@/components/ui";
+import { Card, CardContent, Button, Modal } from "@/components/ui";
 import { useToast } from "@/components/ui/toast";
-import {
-  MapPin,
-  Pencil,
-  Trash2,
-  TrendingUp,
-  TrendingDown,
-  DollarSign,
-} from "lucide-react";
+import { MapPin, Pencil, Trash2, TrendingUp, TrendingDown, DollarSign } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { LocationFormModal } from "@/components/locations/location-form";
 
@@ -48,7 +36,9 @@ export default function LocationsPage() {
     try {
       const res = await fetch("/api/locations");
       const data = await res.json();
-      const locs: { id: string; code: string; name: string }[] = Array.isArray(data) ? data : data.data || [];
+      const locs: { id: string; code: string; name: string }[] = Array.isArray(data)
+        ? data
+        : data.data || [];
 
       // Fetch stats for each location
       const withStats = await Promise.all(
@@ -64,7 +54,7 @@ export default function LocationsPage() {
               stats: { revenue: 0, expenses: 0, net: 0 },
             } as LocationWithStats;
           }
-        })
+        }),
       );
 
       setLocations(withStats);
@@ -113,9 +103,7 @@ export default function LocationsPage() {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-semibold text-[#2D1B0E]">Locatii</h2>
-          <p className="mt-0.5 text-xs text-[#9B8B7F]">
-            Locatiile cafenelelor Moro
-          </p>
+          <p className="mt-0.5 text-xs text-[#9B8B7F]">Locatiile cafenelelor Moro</p>
         </div>
         <Button
           variant="primary"
@@ -197,9 +185,7 @@ export default function LocationsPage() {
                   </div>
 
                   {/* Address */}
-                  {loc.address && (
-                    <p className="text-sm text-text-muted">{loc.address}</p>
-                  )}
+                  {loc.address && <p className="text-sm text-text-muted">{loc.address}</p>}
 
                   {/* Stats */}
                   <div className="border-t border-border pt-4">
@@ -230,7 +216,9 @@ export default function LocationsPage() {
                           <DollarSign className="h-3 w-3" />
                           Net
                         </div>
-                        <p className={`mt-1 text-sm font-semibold ${loc.stats.net >= 0 ? "text-success" : "text-danger"}`}>
+                        <p
+                          className={`mt-1 text-sm font-semibold ${loc.stats.net >= 0 ? "text-success" : "text-danger"}`}
+                        >
                           {formatCurrency(loc.stats.net)}
                         </p>
                       </div>
@@ -267,9 +255,7 @@ export default function LocationsPage() {
               Atentie: Stergerea unei locatii poate afecta datele asociate.
             </p>
           </div>
-          <p className="text-sm text-text-secondary">
-            Aceasta actiune nu poate fi anulata.
-          </p>
+          <p className="text-sm text-text-secondary">Aceasta actiune nu poate fi anulata.</p>
           <div className="flex justify-end gap-3">
             <Button variant="outline" onClick={() => setDeleteTarget(null)}>
               Anuleaza

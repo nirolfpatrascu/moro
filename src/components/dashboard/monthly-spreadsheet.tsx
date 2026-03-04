@@ -13,7 +13,20 @@ export interface SpreadsheetRow {
   indent?: number;
 }
 
-const SHORT_MONTHS = ["IAN", "FEB", "MAR", "APR", "MAI", "IUN", "IUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+const SHORT_MONTHS = [
+  "IAN",
+  "FEB",
+  "MAR",
+  "APR",
+  "MAI",
+  "IUN",
+  "IUL",
+  "AUG",
+  "SEP",
+  "OCT",
+  "NOV",
+  "DEC",
+];
 
 function formatCell(value: number, isPercent?: boolean): string {
   if (isPercent) {
@@ -58,7 +71,10 @@ export function MonthlySpreadsheet({
                   Categorie
                 </th>
                 {SHORT_MONTHS.map((m) => (
-                  <th key={m} className="px-2 py-2 text-right text-xs font-semibold text-[#9B8B7F] whitespace-nowrap">
+                  <th
+                    key={m}
+                    className="px-2 py-2 text-right text-xs font-semibold text-[#9B8B7F] whitespace-nowrap"
+                  >
                     {m}
                   </th>
                 ))}
@@ -72,7 +88,7 @@ export function MonthlySpreadsheet({
                 const total = row.values.reduce((a, b) => a + b, 0);
                 const totalDisplay = row.isPercent
                   ? row.values.filter((v) => v !== 0).length > 0
-                    ? (total / row.values.filter((v) => v !== 0).length)
+                    ? total / row.values.filter((v) => v !== 0).length
                     : 0
                   : total;
 
@@ -83,7 +99,7 @@ export function MonthlySpreadsheet({
                       "border-b border-gray-50 transition-colors hover:bg-[#FFF8F0]/50",
                       row.isHeader && "bg-[#6F4E37]/5",
                       row.isSummary && "border-t-2 border-gray-200 font-bold",
-                      row.isHighlight && "bg-[#D4A574]/10 font-semibold"
+                      row.isHighlight && "bg-[#D4A574]/10 font-semibold",
                     )}
                   >
                     <td
@@ -93,7 +109,7 @@ export function MonthlySpreadsheet({
                         row.isSummary && "bg-white font-bold",
                         row.isHighlight && "bg-[#D4A574]/10 font-semibold",
                         row.indent === 1 && "pl-4",
-                        row.indent === 2 && "pl-8"
+                        row.indent === 2 && "pl-8",
                       )}
                     >
                       {row.label}
@@ -104,7 +120,7 @@ export function MonthlySpreadsheet({
                         className={cn(
                           "px-2 py-1.5 text-right tabular-nums whitespace-nowrap",
                           val < 0 && "text-[#F44336]",
-                          row.isHeader && "font-bold"
+                          row.isHeader && "font-bold",
                         )}
                       >
                         {row.isHeader ? "" : formatCell(val, row.isPercent)}
@@ -113,7 +129,7 @@ export function MonthlySpreadsheet({
                     <td
                       className={cn(
                         "px-2 py-1.5 text-right font-bold tabular-nums whitespace-nowrap",
-                        totalDisplay < 0 && "text-[#F44336]"
+                        totalDisplay < 0 && "text-[#F44336]",
                       )}
                     >
                       {row.isHeader ? "" : formatCell(totalDisplay, row.isPercent)}

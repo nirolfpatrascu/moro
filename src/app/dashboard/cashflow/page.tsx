@@ -5,7 +5,10 @@ import { StatCard } from "@/components/ui";
 import { StatCardSkeleton } from "@/components/dashboard/skeleton";
 import { DashboardFilters } from "@/components/dashboard/dashboard-filters";
 import { CashFlowDetailChart } from "@/components/dashboard/cashflow-detail-chart";
-import { MonthlySpreadsheet, type SpreadsheetRow } from "@/components/dashboard/monthly-spreadsheet";
+import {
+  MonthlySpreadsheet,
+  type SpreadsheetRow,
+} from "@/components/dashboard/monthly-spreadsheet";
 import { formatCurrency } from "@/lib/utils";
 import { ArrowDownCircle, ArrowUpCircle, Wallet, TrendingUp } from "lucide-react";
 
@@ -45,9 +48,21 @@ export default function CashFlowDashboardPage() {
     r.push({ label: "INTRARI", values: zeros(), isHeader: true });
     r.push({ label: "Vanzari Cash", values: data.inflows?.cashSales || zeros(), indent: 1 });
     r.push({ label: "Vanzari Card", values: data.inflows?.cardSales || zeros(), indent: 1 });
-    r.push({ label: "Vanzari Transfer", values: data.inflows?.transferSales || zeros(), indent: 1 });
-    r.push({ label: "Facturi colectate", values: data.inflows?.invoiceCollections || zeros(), indent: 1 });
-    r.push({ label: "Total Intrari", values: data.inflows?.totalInflows || zeros(), isSummary: true });
+    r.push({
+      label: "Vanzari Transfer",
+      values: data.inflows?.transferSales || zeros(),
+      indent: 1,
+    });
+    r.push({
+      label: "Facturi colectate",
+      values: data.inflows?.invoiceCollections || zeros(),
+      indent: 1,
+    });
+    r.push({
+      label: "Total Intrari",
+      values: data.inflows?.totalInflows || zeros(),
+      isSummary: true,
+    });
 
     // IESIRI
     r.push({ label: "IESIRI", values: zeros(), isHeader: true });
@@ -56,11 +71,19 @@ export default function CashFlowDashboardPage() {
     r.push({ label: "OPEX", values: data.outflows?.opex || zeros(), indent: 1 });
     r.push({ label: "Costuri Fixe", values: data.outflows?.costfix || zeros(), indent: 1 });
     r.push({ label: "Taxe", values: data.outflows?.taxe || zeros(), indent: 1 });
-    r.push({ label: "Total Iesiri", values: data.outflows?.totalOutflows || zeros(), isSummary: true });
+    r.push({
+      label: "Total Iesiri",
+      values: data.outflows?.totalOutflows || zeros(),
+      isSummary: true,
+    });
 
     // NET & CUMULATIVE
     r.push({ label: "FLUX NET", values: data.netCashFlow || zeros(), isHighlight: true });
-    r.push({ label: "Flux Cumulativ", values: data.cumulativeCashFlow || zeros(), isHighlight: true });
+    r.push({
+      label: "Flux Cumulativ",
+      values: data.cumulativeCashFlow || zeros(),
+      isHighlight: true,
+    });
 
     return r;
   };
@@ -70,9 +93,7 @@ export default function CashFlowDashboardPage() {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-semibold text-[#2D1B0E]">Cash Flow</h2>
-          <p className="mt-0.5 text-xs text-[#9B8B7F]">
-            Raport cash flow detaliat — {year}
-          </p>
+          <p className="mt-0.5 text-xs text-[#9B8B7F]">Raport cash flow detaliat — {year}</p>
         </div>
         <DashboardFilters
           year={year}

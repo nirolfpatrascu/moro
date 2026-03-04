@@ -1,13 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import {
-  Card,
-  CardContent,
-  Button,
-  Badge,
-  Modal,
-} from "@/components/ui";
+import { useState, useEffect, useMemo } from "react";
+import { Card, CardContent, Button, Badge, Modal } from "@/components/ui";
 import { useToast } from "@/components/ui/toast";
 import {
   Plus,
@@ -17,19 +11,24 @@ import {
   Pencil,
   Trash2,
   Download,
-  ChevronLeft,
-  ChevronRight,
   FileOutput,
   X,
   CheckCircle,
-  ArrowUpDown,
-  ArrowUp,
-  ArrowDown,
 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { OutgoingInvoiceFormModal } from "@/components/outgoing/invoice-form";
 import { OutgoingInvoiceDetailModal } from "@/components/outgoing/invoice-detail";
 import { exportToCSV } from "@/lib/export";
+import { usePaginatedList } from "@/hooks/use-paginated-list";
+import { useSelection } from "@/hooks/use-selection";
+import {
+  useOutgoingInvoices,
+  useDeleteOutgoingInvoice,
+  useMarkOutgoingPaid,
+  useBulkMarkOutgoingPaid,
+} from "@/hooks/queries/use-outgoing-invoices";
+import { useCustomers } from "@/hooks/queries/use-customers";
+import { DataTable, type Column } from "@/components/shared/data-table";
 
 // ── Types ─────────────────────────────────────────────────
 interface InvoiceRow {
@@ -52,214 +51,208 @@ interface InvoiceRow {
   customer: { id: string; name: string };
 }
 
-interface Pagination {
-  page: number;
-  pageSize: number;
-  total: number;
-  totalPages: number;
-}
-
-const STATUS_LABELS: Record<string, { label: string; variant: "success" | "danger" | "warning" }> = {
-  PAID: { label: "Platita", variant: "success" },
-  UNPAID: { label: "Neplatita", variant: "danger" },
-  PARTIAL: { label: "Partial", variant: "warning" },
-};
-
-type SortField = "createdAt" | "invoiceNumber" | "totalAmount" | "issueDate" | "status";
+const STATUS_LABELS: Record<string, { label: string; variant: "success" | "danger" | "warning" }> =
+  {
+    PAID: { label: "Platita", variant: "success" },
+    UNPAID: { label: "Neplatita", variant: "danger" },
+    PARTIAL: { label: "Partial", variant: "warning" },
+  };
 
 export default function OutgoingInvoicesPage() {
-  const [invoices, setInvoices] = useState<InvoiceRow[]>([]);
-  const [pagination, setPagination] = useState<Pagination>({
-    page: 1, pageSize: 20, total: 0, totalPages: 0,
+  // ── Shared hooks ────────────────────────────────────────
+  const { page, setPage, pageSize, sortBy, sortDir, toggleSort } = usePaginatedList({
+    initialSortBy: "createdAt",
+    initialSortDir: "desc",
   });
-  const [loading, setLoading] = useState(true);
+  const { selected, toggle, toggleAll, clear, count: selectedCount } = useSelection();
+  const { toast } = useToast();
+
+  // ── Filter / search state ──────────────────────────────
+  const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [filterCustomer, setFilterCustomer] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
   const [filterYear, setFilterYear] = useState("");
-  const [sortBy, setSortBy] = useState<SortField>("createdAt");
-  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
-  const [customers, setCustomers] = useState<{ id: string; name: string }[]>([]);
   const [showFilters, setShowFilters] = useState(false);
 
-  // Selection state
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [bulkLoading, setBulkLoading] = useState(false);
-
-  // Modal state
+  // ── Modal state ────────────────────────────────────────
   const [formOpen, setFormOpen] = useState(false);
   const [editingInvoice, setEditingInvoice] = useState<InvoiceRow | null>(null);
   const [detailInvoice, setDetailInvoice] = useState<InvoiceRow | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<InvoiceRow | null>(null);
 
-  const { toast } = useToast();
-
-  // ── Load customers ──────────────────────────────────────
-  useEffect(() => {
-    fetch("/api/customers")
-      .then((r) => r.json())
-      .then((data) => {
-        if (Array.isArray(data)) setCustomers(data);
-        else if (data.data) setCustomers(data.data);
-      })
-      .catch(() => {});
-  }, []);
-
-  // ── Fetch invoices ─────────────────────────────────────
-  const fetchInvoices = useCallback(async () => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams();
-      params.set("page", String(pagination.page));
-      params.set("pageSize", "20");
-      params.set("sortBy", sortBy);
-      params.set("sortDir", sortDir);
-      if (search) params.set("search", search);
-      if (filterCustomer) params.set("customerId", filterCustomer);
-      if (filterStatus) params.set("status", filterStatus);
-      if (filterYear) params.set("year", filterYear);
-
-      const res = await fetch(`/api/outgoing-invoices?${params}`);
-      const data = await res.json();
-
-      if (res.ok) {
-        setInvoices(data.data);
-        setPagination(data.pagination);
-      }
-    } catch {
-      toast({ title: "Eroare", description: "Nu s-au putut incarca facturile", variant: "danger" });
-    } finally {
-      setLoading(false);
-    }
-  }, [pagination.page, search, filterCustomer, filterStatus, filterYear, sortBy, sortDir, toast]);
-
-  useEffect(() => {
-    fetchInvoices();
-  }, [fetchInvoices]);
-
-  // Clear selection when data changes
-  useEffect(() => {
-    setSelectedIds(new Set());
-  }, [invoices]);
-
-  // ── Debounced search ────────────────────────────────────
-  const [searchInput, setSearchInput] = useState("");
+  // ── Debounced search (400ms) ───────────────────────────
   useEffect(() => {
     const timer = setTimeout(() => {
       setSearch(searchInput);
-      setPagination((p) => ({ ...p, page: 1 }));
+      setPage(1);
     }, 400);
     return () => clearTimeout(timer);
-  }, [searchInput]);
+  }, [searchInput, setPage]);
 
-  // ── Sorting ──────────────────────────────────────────────
-  const handleSort = (field: SortField) => {
-    if (sortBy === field) {
-      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
-    } else {
-      setSortBy(field);
-      setSortDir("asc");
-    }
-    setPagination((p) => ({ ...p, page: 1 }));
-  };
+  // ── React Query data ──────────────────────────────────
+  const { data, isLoading } = useOutgoingInvoices({
+    page,
+    pageSize,
+    sortBy,
+    sortDir,
+    search,
+    customerId: filterCustomer || undefined,
+    status: filterStatus || undefined,
+    year: filterYear || undefined,
+  });
+  const invoices: InvoiceRow[] = data?.data ?? [];
+  const pagination = data?.pagination;
 
-  const SortIcon = ({ field }: { field: SortField }) => {
-    if (sortBy !== field) return <ArrowUpDown className="h-3 w-3 opacity-40" />;
-    return sortDir === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />;
-  };
+  const { data: customers = [] } = useCustomers();
 
-  // ── Selection ────────────────────────────────────────────
-  const allSelected = invoices.length > 0 && invoices.every((inv) => selectedIds.has(inv.id));
+  // ── Mutations ─────────────────────────────────────────
+  const deleteMutation = useDeleteOutgoingInvoice();
+  const markPaidMutation = useMarkOutgoingPaid();
+  const bulkMarkPaidMutation = useBulkMarkOutgoingPaid();
 
-  const toggleAll = () => {
-    if (allSelected) {
-      setSelectedIds(new Set());
-    } else {
-      setSelectedIds(new Set(invoices.map((inv) => inv.id)));
-    }
-  };
+  // Clear selection when data changes
+  useEffect(() => {
+    clear();
+  }, [data, clear]);
 
-  const toggleOne = (id: string) => {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
+  // ── Handlers ──────────────────────────────────────────
+  const handleMarkPaid = (inv: InvoiceRow) => {
+    markPaidMutation.mutate(inv.id, {
+      onSuccess: () =>
+        toast({ title: `Factura ${inv.invoiceNumber} marcata ca platita`, variant: "success" }),
+      onError: () => toast({ title: "Eroare", variant: "danger" }),
     });
   };
 
-  // ── Bulk mark as paid ────────────────────────────────────
-  const handleBulkMarkPaid = async () => {
-    if (selectedIds.size === 0) return;
-    setBulkLoading(true);
-    try {
-      const res = await fetch("/api/outgoing-invoices", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ids: Array.from(selectedIds), status: "PAID" }),
-      });
-      if (res.ok) {
-        toast({ title: `${selectedIds.size} facturi marcate ca platite`, variant: "success" });
-        setSelectedIds(new Set());
-        fetchInvoices();
-      } else {
-        toast({ title: "Eroare la actualizare", variant: "danger" });
-      }
-    } catch {
-      toast({ title: "Eroare la actualizare", variant: "danger" });
-    } finally {
-      setBulkLoading(false);
-    }
+  const handleBulkMarkPaid = () => {
+    if (selectedCount === 0) return;
+    bulkMarkPaidMutation.mutate(Array.from(selected), {
+      onSuccess: () => {
+        toast({ title: `${selectedCount} facturi marcate ca platite`, variant: "success" });
+        clear();
+      },
+      onError: () => toast({ title: "Eroare la actualizare", variant: "danger" }),
+    });
   };
 
-  // ── Quick mark as paid (single) ──────────────────────────
-  const handleMarkPaid = async (inv: InvoiceRow) => {
-    try {
-      const res = await fetch(`/api/outgoing-invoices/${inv.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: "PAID" }),
-      });
-      if (res.ok) {
-        toast({ title: `Factura ${inv.invoiceNumber} marcata ca platita`, variant: "success" });
-        fetchInvoices();
-      } else {
-        toast({ title: "Eroare", variant: "danger" });
-      }
-    } catch {
-      toast({ title: "Eroare", variant: "danger" });
-    }
-  };
-
-  // ── Delete ──────────────────────────────────────────────
-  const handleDelete = async () => {
+  const handleDelete = () => {
     if (!deleteTarget) return;
-    try {
-      const res = await fetch(`/api/outgoing-invoices/${deleteTarget.id}`, {
-        method: "DELETE",
-      });
-      if (res.ok) {
-        toast({ title: "Factura stearsa", variant: "success" });
-        fetchInvoices();
-      } else {
-        toast({ title: "Eroare la stergere", variant: "danger" });
-      }
-    } catch {
-      toast({ title: "Eroare la stergere", variant: "danger" });
-    }
-    setDeleteTarget(null);
+    deleteMutation.mutate(deleteTarget.id, {
+      onSuccess: () => toast({ title: "Factura stearsa", variant: "success" }),
+      onError: () => toast({ title: "Eroare la stergere", variant: "danger" }),
+      onSettled: () => setDeleteTarget(null),
+    });
   };
 
-  // ── After form submit ───────────────────────────────────
   const handleFormSuccess = () => {
     setFormOpen(false);
     setEditingInvoice(null);
-    fetchInvoices();
   };
 
-  // Year options for filter
+  // ── Year options ──────────────────────────────────────
   const currentYear = new Date().getFullYear();
   const yearOptions = Array.from({ length: 5 }, (_, i) => currentYear - i);
+
+  // ── Columns ───────────────────────────────────────────
+  const columns = useMemo<Column<InvoiceRow>[]>(
+    () => [
+      {
+        key: "invoiceNumber",
+        label: "Nr. Factura",
+        sortable: true,
+        render: (inv) => <span className="font-medium text-text">{inv.invoiceNumber}</span>,
+      },
+      {
+        key: "customer",
+        label: "Client",
+        render: (inv) => <span className="text-text-secondary">{inv.customer.name}</span>,
+      },
+      {
+        key: "issueDate",
+        label: "Data",
+        sortable: true,
+        render: (inv) => (
+          <span className="text-text-secondary">
+            {inv.issueDate ? new Date(inv.issueDate).toLocaleDateString("ro-RO") : "-"}
+          </span>
+        ),
+      },
+      {
+        key: "totalAmount",
+        label: "Total",
+        sortable: true,
+        className: "text-right",
+        render: (inv) => (
+          <span className="font-medium text-text">{formatCurrency(inv.totalAmount)}</span>
+        ),
+      },
+      {
+        key: "unpaidAmount",
+        label: "Neachitat",
+        className: "text-right",
+        render: (inv) => (
+          <span className="text-text-secondary">
+            {inv.unpaidAmount > 0 ? formatCurrency(inv.unpaidAmount) : "-"}
+          </span>
+        ),
+      },
+      {
+        key: "status",
+        label: "Status",
+        sortable: true,
+        className: "text-center",
+        render: (inv) => {
+          const s = STATUS_LABELS[inv.status] || STATUS_LABELS.UNPAID;
+          return <Badge variant={s.variant}>{s.label}</Badge>;
+        },
+      },
+      {
+        key: "actions",
+        label: "Actiuni",
+        className: "text-right",
+        render: (inv) => (
+          <div className="flex items-center justify-end gap-1">
+            {inv.status !== "PAID" && (
+              <button
+                onClick={() => handleMarkPaid(inv)}
+                className="rounded p-1.5 text-text-muted hover:bg-success-light hover:text-success"
+                title="Marcheaza ca platita"
+              >
+                <CheckCircle className="h-4 w-4" />
+              </button>
+            )}
+            <button
+              onClick={() => setDetailInvoice(inv)}
+              className="rounded p-1.5 text-text-muted hover:bg-surface-hover hover:text-text"
+              title="Detalii"
+            >
+              <Eye className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => {
+                setEditingInvoice(inv);
+                setFormOpen(true);
+              }}
+              className="rounded p-1.5 text-text-muted hover:bg-surface-hover hover:text-primary"
+              title="Editeaza"
+            >
+              <Pencil className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => setDeleteTarget(inv)}
+              className="rounded p-1.5 text-text-muted hover:bg-danger-light hover:text-danger"
+              title="Sterge"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          </div>
+        ),
+      },
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    ],
+    [],
+  );
 
   return (
     <div className="space-y-8">
@@ -268,25 +261,29 @@ export default function OutgoingInvoicesPage() {
         <div>
           <h2 className="text-xl font-semibold text-[#2D1B0E]">Iesire Facturi</h2>
           <p className="mt-0.5 text-xs text-[#9B8B7F]">
-            {pagination.total} facturi emise catre clienti
+            {pagination?.total ?? 0} facturi emise catre clienti
           </p>
         </div>
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
             size="sm"
-            onClick={() => {
+            onClick={() =>
               exportToCSV(invoices, "facturi-iesire", [
                 { header: "Nr. Factura", accessor: (i) => i.invoiceNumber },
                 { header: "Client", accessor: (i) => i.customer.name },
-                { header: "Data emitere", accessor: (i) => i.issueDate ? new Date(i.issueDate).toLocaleDateString("ro-RO") : "" },
+                {
+                  header: "Data emitere",
+                  accessor: (i) =>
+                    i.issueDate ? new Date(i.issueDate).toLocaleDateString("ro-RO") : "",
+                },
                 { header: "Total fara TVA", accessor: (i) => i.amountExVat },
                 { header: "Total", accessor: (i) => i.totalAmount },
                 { header: "Platit", accessor: (i) => i.paidAmount },
                 { header: "Neachitat", accessor: (i) => i.unpaidAmount },
                 { header: "Status", accessor: (i) => i.status },
-              ]);
-            }}
+              ])
+            }
           >
             <Download className="h-4 w-4" />
             Export CSV
@@ -306,28 +303,24 @@ export default function OutgoingInvoicesPage() {
       </div>
 
       {/* Bulk Actions Bar */}
-      {selectedIds.size > 0 && (
+      {selectedCount > 0 && (
         <Card>
           <CardContent>
             <div className="flex items-center justify-between">
               <p className="text-sm font-medium text-text">
-                {selectedIds.size} factur{selectedIds.size === 1 ? "a selectata" : "i selectate"}
+                {selectedCount} factur{selectedCount === 1 ? "a selectata" : "i selectate"}
               </p>
               <div className="flex items-center gap-2">
                 <Button
                   variant="primary"
                   size="sm"
                   onClick={handleBulkMarkPaid}
-                  loading={bulkLoading}
+                  loading={bulkMarkPaidMutation.isPending}
                 >
                   <CheckCircle className="h-4 w-4" />
                   Marcheaza ca platite
                 </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setSelectedIds(new Set())}
-                >
+                <Button variant="ghost" size="sm" onClick={clear}>
                   Anuleaza selectia
                 </Button>
               </div>
@@ -366,7 +359,7 @@ export default function OutgoingInvoicesPage() {
                 value={filterCustomer}
                 onChange={(e) => {
                   setFilterCustomer(e.target.value);
-                  setPagination((p) => ({ ...p, page: 1 }));
+                  setPage(1);
                 }}
                 className="h-9 rounded-lg border border-border bg-surface px-3 text-sm"
               >
@@ -381,7 +374,7 @@ export default function OutgoingInvoicesPage() {
                 value={filterStatus}
                 onChange={(e) => {
                   setFilterStatus(e.target.value);
-                  setPagination((p) => ({ ...p, page: 1 }));
+                  setPage(1);
                 }}
                 className="h-9 rounded-lg border border-border bg-surface px-3 text-sm"
               >
@@ -394,7 +387,7 @@ export default function OutgoingInvoicesPage() {
                 value={filterYear}
                 onChange={(e) => {
                   setFilterYear(e.target.value);
-                  setPagination((p) => ({ ...p, page: 1 }));
+                  setPage(1);
                 }}
                 className="h-9 rounded-lg border border-border bg-surface px-3 text-sm"
               >
@@ -425,200 +418,22 @@ export default function OutgoingInvoicesPage() {
       </Card>
 
       {/* Table */}
-      <Card>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border bg-background">
-                <th className="px-4 py-3 text-left">
-                  <input
-                    type="checkbox"
-                    checked={allSelected}
-                    onChange={toggleAll}
-                    className="h-4 w-4 rounded border-border accent-primary"
-                  />
-                </th>
-                <th
-                  className="px-4 py-3 text-left font-medium text-text-secondary cursor-pointer select-none hover:text-text"
-                  onClick={() => handleSort("invoiceNumber")}
-                >
-                  <span className="inline-flex items-center gap-1">
-                    Nr. Factura <SortIcon field="invoiceNumber" />
-                  </span>
-                </th>
-                <th className="px-4 py-3 text-left font-medium text-text-secondary">Client</th>
-                <th
-                  className="px-4 py-3 text-left font-medium text-text-secondary cursor-pointer select-none hover:text-text"
-                  onClick={() => handleSort("issueDate")}
-                >
-                  <span className="inline-flex items-center gap-1">
-                    Data <SortIcon field="issueDate" />
-                  </span>
-                </th>
-                <th
-                  className="px-4 py-3 text-right font-medium text-text-secondary cursor-pointer select-none hover:text-text"
-                  onClick={() => handleSort("totalAmount")}
-                >
-                  <span className="inline-flex items-center justify-end gap-1">
-                    Total <SortIcon field="totalAmount" />
-                  </span>
-                </th>
-                <th className="px-4 py-3 text-right font-medium text-text-secondary">Neachitat</th>
-                <th
-                  className="px-4 py-3 text-center font-medium text-text-secondary cursor-pointer select-none hover:text-text"
-                  onClick={() => handleSort("status")}
-                >
-                  <span className="inline-flex items-center gap-1">
-                    Status <SortIcon field="status" />
-                  </span>
-                </th>
-                <th className="px-4 py-3 text-right font-medium text-text-secondary">Actiuni</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                Array.from({ length: 5 }).map((_, i) => (
-                  <tr key={i} className="border-b border-border-light">
-                    {Array.from({ length: 8 }).map((_, j) => (
-                      <td key={j} className="px-4 py-3">
-                        <div className="h-4 animate-pulse rounded bg-border-light" />
-                      </td>
-                    ))}
-                  </tr>
-                ))
-              ) : invoices.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="px-4 py-12 text-center">
-                    <FileOutput className="mx-auto mb-3 h-12 w-12 text-border" />
-                    <p className="text-text-muted">Nu exista facturi</p>
-                    <p className="mt-1 text-xs text-text-muted">
-                      Adauga o factura de iesire
-                    </p>
-                  </td>
-                </tr>
-              ) : (
-                invoices.map((inv) => {
-                  const statusInfo = STATUS_LABELS[inv.status] || STATUS_LABELS.UNPAID;
-                  const isSelected = selectedIds.has(inv.id);
-                  return (
-                    <tr
-                      key={inv.id}
-                      className={`border-b border-border-light last:border-0 transition-colors hover:bg-surface-hover ${
-                        isSelected ? "bg-primary/5" : ""
-                      }`}
-                    >
-                      <td className="px-4 py-3">
-                        <input
-                          type="checkbox"
-                          checked={isSelected}
-                          onChange={() => toggleOne(inv.id)}
-                          className="h-4 w-4 rounded border-border accent-primary"
-                        />
-                      </td>
-                      <td className="px-4 py-3 font-medium text-text">
-                        {inv.invoiceNumber}
-                      </td>
-                      <td className="px-4 py-3 text-text-secondary">
-                        {inv.customer.name}
-                      </td>
-                      <td className="px-4 py-3 text-text-secondary">
-                        {inv.issueDate
-                          ? new Date(inv.issueDate).toLocaleDateString("ro-RO")
-                          : "-"}
-                      </td>
-                      <td className="px-4 py-3 text-right font-medium text-text">
-                        {formatCurrency(inv.totalAmount)}
-                      </td>
-                      <td className="px-4 py-3 text-right text-text-secondary">
-                        {inv.unpaidAmount > 0 ? formatCurrency(inv.unpaidAmount) : "-"}
-                      </td>
-                      <td className="px-4 py-3 text-center">
-                        <Badge variant={statusInfo.variant}>
-                          {statusInfo.label}
-                        </Badge>
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center justify-end gap-1">
-                          {inv.status !== "PAID" && (
-                            <button
-                              onClick={() => handleMarkPaid(inv)}
-                              className="rounded p-1.5 text-text-muted hover:bg-success-light hover:text-success"
-                              title="Marcheaza ca platita"
-                            >
-                              <CheckCircle className="h-4 w-4" />
-                            </button>
-                          )}
-                          <button
-                            onClick={() => setDetailInvoice(inv)}
-                            className="rounded p-1.5 text-text-muted hover:bg-surface-hover hover:text-text"
-                            title="Detalii"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={() => {
-                              setEditingInvoice(inv);
-                              setFormOpen(true);
-                            }}
-                            className="rounded p-1.5 text-text-muted hover:bg-surface-hover hover:text-primary"
-                            title="Editeaza"
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={() => setDeleteTarget(inv)}
-                            className="rounded p-1.5 text-text-muted hover:bg-danger-light hover:text-danger"
-                            title="Sterge"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Pagination */}
-        {pagination.totalPages > 1 && (
-          <div className="flex items-center justify-between border-t border-border px-4 py-3">
-            <p className="text-xs text-text-muted">
-              {(pagination.page - 1) * pagination.pageSize + 1}–
-              {Math.min(pagination.page * pagination.pageSize, pagination.total)} din{" "}
-              {pagination.total}
-            </p>
-            <div className="flex items-center gap-1">
-              <button
-                className="rounded p-1 text-text-muted hover:bg-surface-hover disabled:opacity-40"
-                onClick={() =>
-                  setPagination((p) => ({ ...p, page: Math.max(1, p.page - 1) }))
-                }
-                disabled={pagination.page <= 1}
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </button>
-              <span className="px-2 text-xs text-text-secondary">
-                {pagination.page} / {pagination.totalPages}
-              </span>
-              <button
-                className="rounded p-1 text-text-muted hover:bg-surface-hover disabled:opacity-40"
-                onClick={() =>
-                  setPagination((p) => ({
-                    ...p,
-                    page: Math.min(p.totalPages, p.page + 1),
-                  }))
-                }
-                disabled={pagination.page >= pagination.totalPages}
-              >
-                <ChevronRight className="h-4 w-4" />
-              </button>
-            </div>
-          </div>
-        )}
-      </Card>
+      <DataTable<InvoiceRow>
+        columns={columns}
+        data={invoices}
+        loading={isLoading}
+        pagination={pagination}
+        onPageChange={setPage}
+        sortBy={sortBy}
+        sortDir={sortDir}
+        onSort={toggleSort}
+        selected={selected}
+        onToggleOne={toggle}
+        onToggleAll={() => toggleAll(invoices.map((i) => i.id))}
+        emptyIcon={<FileOutput className="mx-auto h-12 w-12 text-border" />}
+        emptyText="Nu exista facturi"
+        emptySubtext="Adauga o factura de iesire"
+      />
 
       {/* Create/Edit Form Modal */}
       <OutgoingInvoiceFormModal
@@ -654,9 +469,7 @@ export default function OutgoingInvoicesPage() {
         description={`Esti sigur ca vrei sa stergi factura ${deleteTarget?.invoiceNumber}?`}
       >
         <div className="space-y-4">
-          <p className="text-sm text-text-secondary">
-            Aceasta actiune nu poate fi anulata.
-          </p>
+          <p className="text-sm text-text-secondary">Aceasta actiune nu poate fi anulata.</p>
           <div className="flex justify-end gap-3">
             <Button variant="outline" onClick={() => setDeleteTarget(null)}>
               Anuleaza

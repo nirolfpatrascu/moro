@@ -1,12 +1,12 @@
-import { PrismaClient, Prisma } from '@prisma/client'
+import { PrismaClient, Prisma } from "@prisma/client";
 
 const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined
-}
+  prisma: PrismaClient | undefined;
+};
 
-export const prisma = globalForPrisma.prisma ?? new PrismaClient()
+export const prisma = globalForPrisma.prisma ?? new PrismaClient();
 
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
+if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
 
 /**
  * Convert Prisma Decimal fields to plain numbers for JSON serialization.
@@ -18,7 +18,7 @@ export function serializeDecimal<T>(data: T): T {
   if (data instanceof Prisma.Decimal) return Number(data) as unknown as T;
   if (data instanceof Date) return data;
   if (Array.isArray(data)) return data.map(serializeDecimal) as unknown as T;
-  if (typeof data === 'object') {
+  if (typeof data === "object") {
     const result: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(data as Record<string, unknown>)) {
       result[key] = serializeDecimal(value);

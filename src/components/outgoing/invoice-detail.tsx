@@ -86,9 +86,10 @@ export function OutgoingInvoiceDetailModal({ invoice, onClose, onMarkPaid, onEdi
     printWindow.print();
   };
 
-  const paymentDate = invoice.paymentDay && invoice.paymentMonth && invoice.paymentYear
-    ? `${invoice.paymentDay} ${invoice.paymentMonth} ${invoice.paymentYear}`
-    : null;
+  const paymentDate =
+    invoice.paymentDay && invoice.paymentMonth && invoice.paymentYear
+      ? `${invoice.paymentDay} ${invoice.paymentMonth} ${invoice.paymentYear}`
+      : null;
 
   return (
     <Modal
@@ -111,18 +112,12 @@ export function OutgoingInvoiceDetailModal({ invoice, onClose, onMarkPaid, onEdi
           <DetailRow
             label="Data Emitere"
             value={
-              invoice.issueDate
-                ? new Date(invoice.issueDate).toLocaleDateString("ro-RO")
-                : null
+              invoice.issueDate ? new Date(invoice.issueDate).toLocaleDateString("ro-RO") : null
             }
           />
           <DetailRow
             label="Scadenta"
-            value={
-              invoice.dueDate
-                ? new Date(invoice.dueDate).toLocaleDateString("ro-RO")
-                : null
-            }
+            value={invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString("ro-RO") : null}
           />
           <DetailRow label="Perioada" value={`${invoice.month} ${invoice.year}`} />
         </div>
@@ -136,9 +131,7 @@ export function OutgoingInvoiceDetailModal({ invoice, onClose, onMarkPaid, onEdi
           <DetailRow
             label="Total"
             value={
-              <span className="text-base font-bold">
-                {formatCurrency(invoice.totalAmount)}
-              </span>
+              <span className="text-base font-bold">{formatCurrency(invoice.totalAmount)}</span>
             }
           />
         </div>
@@ -175,21 +168,13 @@ export function OutgoingInvoiceDetailModal({ invoice, onClose, onMarkPaid, onEdi
         </Button>
         <div className="flex items-center gap-2">
           {invoice.status !== "PAID" && onMarkPaid && (
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={() => onMarkPaid(invoice)}
-            >
+            <Button variant="primary" size="sm" onClick={() => onMarkPaid(invoice)}>
               <CheckCircle className="h-4 w-4" />
               Marcheaza ca platita
             </Button>
           )}
           {onEdit && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onEdit(invoice)}
-            >
+            <Button variant="outline" size="sm" onClick={() => onEdit(invoice)}>
               <Pencil className="h-4 w-4" />
               Editeaza
             </Button>

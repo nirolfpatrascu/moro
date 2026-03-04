@@ -24,10 +24,7 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
     });
 
     if (!location) {
-      return NextResponse.json(
-        { error: "Locatia nu a fost gasita" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Locatia nu a fost gasita" }, { status: 404 });
     }
 
     // Get current month stats
@@ -70,10 +67,7 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
     });
   } catch (error) {
     console.error("Get location error:", error);
-    return NextResponse.json(
-      { error: "Eroare la incarcarea locatiei" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Eroare la incarcarea locatiei" }, { status: 500 });
   }
 }
 
@@ -90,16 +84,13 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     if (!parsed.success) {
       return NextResponse.json(
         { error: "Date invalide", details: parsed.error.issues },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     const existing = await prisma.location.findUnique({ where: { id } });
     if (!existing) {
-      return NextResponse.json(
-        { error: "Locatia nu a fost gasita" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Locatia nu a fost gasita" }, { status: 404 });
     }
 
     // Check for duplicate name (case-insensitive, excludes self)
@@ -111,10 +102,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         },
       });
       if (duplicate) {
-        return NextResponse.json(
-          { error: "Exista deja o locatie cu acest nume" },
-          { status: 409 }
-        );
+        return NextResponse.json({ error: "Exista deja o locatie cu acest nume" }, { status: 409 });
       }
     }
 
@@ -127,10 +115,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         },
       });
       if (duplicate) {
-        return NextResponse.json(
-          { error: "Exista deja o locatie cu acest cod" },
-          { status: 409 }
-        );
+        return NextResponse.json({ error: "Exista deja o locatie cu acest cod" }, { status: 409 });
       }
     }
 
@@ -148,10 +133,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     return NextResponse.json(location);
   } catch (error) {
     console.error("Update location error:", error);
-    return NextResponse.json(
-      { error: "Eroare la actualizarea locatiei" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Eroare la actualizarea locatiei" }, { status: 500 });
   }
 }
 
@@ -176,23 +158,18 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
     });
 
     if (!existing) {
-      return NextResponse.json(
-        { error: "Locatia nu a fost gasita" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Locatia nu a fost gasita" }, { status: 404 });
     }
 
     const totalRelated =
-      existing._count.dailyIncomes +
-      existing._count.incomingInvoices +
-      existing._count.receipts;
+      existing._count.dailyIncomes + existing._count.incomingInvoices + existing._count.receipts;
 
     if (totalRelated > 0) {
       return NextResponse.json(
         {
           error: `Locatia are date asociate (${existing._count.incomingInvoices} facturi, ${existing._count.receipts} incasari). Sterge mai intai datele.`,
         },
-        { status: 409 }
+        { status: 409 },
       );
     }
 
@@ -201,9 +178,6 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Delete location error:", error);
-    return NextResponse.json(
-      { error: "Eroare la stergerea locatiei" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Eroare la stergerea locatiei" }, { status: 500 });
   }
 }

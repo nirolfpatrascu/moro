@@ -39,10 +39,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen">
       <Sidebar />
-      <main
-        className="flex-1 min-h-screen bg-[#FFF8F0]"
-        style={{ marginLeft: "16rem" }}
-      >
+      <main className="flex-1 min-h-screen bg-[#FFF8F0]" style={{ marginLeft: "16rem" }}>
         <Header />
         <div className="px-6 py-8 sm:px-8 md:px-10 lg:px-12">{children}</div>
       </main>

@@ -20,13 +20,7 @@ interface AlertsData {
   }[];
 }
 
-export function OverdueAlerts({
-  data,
-  loading,
-}: {
-  data: AlertsData | null;
-  loading: boolean;
-}) {
+export function OverdueAlerts({ data, loading }: { data: AlertsData | null; loading: boolean }) {
   if (loading || !data) return <ChartSkeleton title="Alerte" height="h-80" />;
 
   const hasAlerts = data.totalOverdue > 0 || data.highValueUnpaid.length > 0;
@@ -36,9 +30,7 @@ export function OverdueAlerts({
       <CardHeader className="justify-center">
         <CardTitle className="flex items-center gap-2">
           Alerte
-          {data.totalOverdue > 0 && (
-            <Badge variant="danger">{data.totalOverdue}</Badge>
-          )}
+          {data.totalOverdue > 0 && <Badge variant="danger">{data.totalOverdue}</Badge>}
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -56,9 +48,7 @@ export function OverdueAlerts({
                     <p className="text-sm font-medium text-danger">
                       {data.overduePayables} facturi de plata restante
                     </p>
-                    <p className="text-xs text-danger/70">
-                      Facturi cu scadenta depasita
-                    </p>
+                    <p className="text-xs text-danger/70">Facturi cu scadenta depasita</p>
                   </div>
                   <AlertTriangle className="h-4 w-4 shrink-0 text-danger" />
                 </div>
@@ -73,9 +63,7 @@ export function OverdueAlerts({
                     <p className="text-sm font-medium text-warning">
                       {data.overdueReceivables} facturi de incasat restante
                     </p>
-                    <p className="text-xs text-warning/70">
-                      Clienti cu plati intarziate
-                    </p>
+                    <p className="text-xs text-warning/70">Clienti cu plati intarziate</p>
                   </div>
                   <AlertTriangle className="h-4 w-4 shrink-0 text-warning" />
                 </div>

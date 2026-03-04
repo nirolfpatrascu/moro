@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     if (!parsed.success) {
       return NextResponse.json(
         { error: "Date invalide", details: parsed.error.issues },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -46,9 +46,7 @@ export async function POST(request: NextRequest) {
 
     // Load locations for lookup
     const locations = await prisma.location.findMany();
-    const locationMap = new Map(
-      locations.map((l) => [l.code.toUpperCase(), l.id])
-    );
+    const locationMap = new Map(locations.map((l) => [l.code.toUpperCase(), l.id]));
 
     let successCount = 0;
     let updatedCount = 0;
@@ -72,11 +70,7 @@ export async function POST(request: NextRequest) {
 
         // Normalize date to midnight UTC for consistent unique key
         const dateNorm = new Date(
-          Date.UTC(
-            row.date.getUTCFullYear(),
-            row.date.getUTCMonth(),
-            row.date.getUTCDate()
-          )
+          Date.UTC(row.date.getUTCFullYear(), row.date.getUTCMonth(), row.date.getUTCDate()),
         );
 
         const data = {
@@ -138,9 +132,6 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("Income commit error:", error);
-    return NextResponse.json(
-      { error: "Eroare la importul incasarilor" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Eroare la importul incasarilor" }, { status: 500 });
   }
 }

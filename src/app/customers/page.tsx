@@ -1,22 +1,9 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import {
-  Card,
-  CardContent,
-  Button,
-  Modal,
-} from "@/components/ui";
+import { Card, CardContent, Button, Modal } from "@/components/ui";
 import { useToast } from "@/components/ui/toast";
-import {
-  Plus,
-  Search,
-  Pencil,
-  Trash2,
-  Users,
-  FileOutput,
-  Download,
-} from "lucide-react";
+import { Plus, Search, Pencil, Trash2, Users, FileOutput, Download } from "lucide-react";
 import { CustomerFormModal } from "@/components/customers/customer-form";
 import { exportToCSV } from "@/lib/export";
 
@@ -60,7 +47,9 @@ export default function CustomersPage() {
       const invoicesData = await invoicesRes.json();
 
       // Get all customers with their invoice counts
-      const customerList: { id: string; name: string }[] = Array.isArray(data) ? data : data.data || [];
+      const customerList: { id: string; name: string }[] = Array.isArray(data)
+        ? data
+        : data.data || [];
 
       // Count invoices per customer from a separate call
       const countRes = await fetch("/api/outgoing-invoices?pageSize=100");
@@ -90,9 +79,7 @@ export default function CustomersPage() {
 
   // Filter locally by search
   const filtered = search
-    ? customers.filter((c) =>
-        c.name.toLowerCase().includes(search.toLowerCase())
-      )
+    ? customers.filter((c) => c.name.toLowerCase().includes(search.toLowerCase()))
     : customers;
 
   // ── Delete ──────────────────────────────────────────────
@@ -128,9 +115,7 @@ export default function CustomersPage() {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-semibold text-[#2D1B0E]">Clienti</h2>
-          <p className="mt-0.5 text-xs text-[#9B8B7F]">
-            {customers.length} clienti
-          </p>
+          <p className="mt-0.5 text-xs text-[#9B8B7F]">{customers.length} clienti</p>
         </div>
         <div className="flex items-center gap-2">
           <Button
@@ -183,7 +168,9 @@ export default function CustomersPage() {
             <thead>
               <tr className="border-b border-border bg-background">
                 <th className="px-4 py-3 text-left font-medium text-text-secondary">Nume client</th>
-                <th className="px-4 py-3 text-center font-medium text-text-secondary">Nr. facturi</th>
+                <th className="px-4 py-3 text-center font-medium text-text-secondary">
+                  Nr. facturi
+                </th>
                 <th className="px-4 py-3 text-right font-medium text-text-secondary">Actiuni</th>
               </tr>
             </thead>
@@ -283,14 +270,12 @@ export default function CustomersPage() {
           {deleteTarget && deleteTarget._count.invoices > 0 && (
             <div className="rounded-lg border border-warning bg-warning/10 p-3">
               <p className="text-sm text-warning">
-                Atentie: Clientul are {deleteTarget._count.invoices} facturi asociate.
-                Sterge mai intai facturile.
+                Atentie: Clientul are {deleteTarget._count.invoices} facturi asociate. Sterge mai
+                intai facturile.
               </p>
             </div>
           )}
-          <p className="text-sm text-text-secondary">
-            Aceasta actiune nu poate fi anulata.
-          </p>
+          <p className="text-sm text-text-secondary">Aceasta actiune nu poate fi anulata.</p>
           <div className="flex justify-end gap-3">
             <Button variant="outline" onClick={() => setDeleteTarget(null)}>
               Anuleaza

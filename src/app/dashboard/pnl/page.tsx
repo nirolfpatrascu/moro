@@ -5,15 +5,13 @@ import { StatCard } from "@/components/ui";
 import { StatCardSkeleton } from "@/components/dashboard/skeleton";
 import { DashboardFilters } from "@/components/dashboard/dashboard-filters";
 import { PnlChart } from "@/components/dashboard/pnl-chart";
-import { MonthlySpreadsheet, type SpreadsheetRow } from "@/components/dashboard/monthly-spreadsheet";
+import {
+  MonthlySpreadsheet,
+  type SpreadsheetRow,
+} from "@/components/dashboard/monthly-spreadsheet";
 import { formatCurrency } from "@/lib/utils";
 import { TrendingUp, TrendingDown, Wallet, Percent } from "lucide-react";
-
-const COGS_CATS = ["BAR", "BUCATARIE", "CONSUMABILE", "TRANSPORT", "LIVRARE", "DIVERSE"];
-const PEOPLE_CATS = ["SALARII", "COLABORATORI", "TAXE SALARIU", "TICHETE MASA", "BONUSURI", "UNIFORME", "TRAINING"];
-const OPEX_CATS = ["LICENTE", "CONSULTING", "CONTABILITATE", "AUTORIZATII", "MARKETING", "DIVERSE", "INVENTAR OBIECTE"];
-const COSTFIX_CATS = ["CHIRII", "UTILITATI", "BANCA", "DIVERSE"];
-const TAXE_CATS = ["IMPOZIT VENIT", "TVA", "ALTE TAXE"];
+import { COGS_CATS, PEOPLE_CATS, OPEX_CATS, COSTFIX_CATS, TAXE_CATS } from "@/lib/constants";
 
 function zeros(): number[] {
   return new Array(12).fill(0);
@@ -51,7 +49,7 @@ export default function PnlDashboardPage() {
           (data.people?.total?.[i] || 0) +
           (data.opex?.total?.[i] || 0) +
           (data.costfix?.total?.[i] || 0) +
-          (data.taxe?.total?.[i] || 0)
+          (data.taxe?.total?.[i] || 0),
       )
     : zeros();
 
@@ -92,10 +90,22 @@ export default function PnlDashboardPage() {
     for (const cat of COSTFIX_CATS) {
       r.push({ label: cat, values: data.costfix?.[cat] || zeros(), indent: 1 });
     }
-    r.push({ label: "Total Costuri Fixe", values: data.costfix?.total || zeros(), isSummary: true });
+    r.push({
+      label: "Total Costuri Fixe",
+      values: data.costfix?.total || zeros(),
+      isSummary: true,
+    });
 
-    r.push({ label: "Profit Operational", values: data.operatingProfit || zeros(), isHighlight: true });
-    r.push({ label: "Marja operationala %", values: data.operatingMargin || zeros(), isPercent: true });
+    r.push({
+      label: "Profit Operational",
+      values: data.operatingProfit || zeros(),
+      isHighlight: true,
+    });
+    r.push({
+      label: "Marja operationala %",
+      values: data.operatingMargin || zeros(),
+      isPercent: true,
+    });
 
     // F. TAXE
     r.push({ label: "F. TAXE", values: zeros(), isHeader: true });
@@ -115,9 +125,7 @@ export default function PnlDashboardPage() {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-semibold text-[#2D1B0E]">Profit & Loss</h2>
-          <p className="mt-0.5 text-xs text-[#9B8B7F]">
-            Raport P&L detaliat — {year}
-          </p>
+          <p className="mt-0.5 text-xs text-[#9B8B7F]">Raport P&L detaliat — {year}</p>
         </div>
         <DashboardFilters
           year={year}
@@ -175,11 +183,7 @@ export default function PnlDashboardPage() {
       />
 
       {/* Spreadsheet */}
-      <MonthlySpreadsheet
-        title={`P&L Detaliat — ${year}`}
-        rows={buildRows()}
-        loading={loading}
-      />
+      <MonthlySpreadsheet title={`P&L Detaliat — ${year}`} rows={buildRows()} loading={loading} />
     </div>
   );
 }

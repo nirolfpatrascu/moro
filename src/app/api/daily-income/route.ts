@@ -60,25 +60,27 @@ export async function GET(request: NextRequest) {
       _count: true,
     });
 
-    return NextResponse.json(serializeDecimal({
-      data: records,
-      pagination: {
-        page,
-        pageSize,
-        total,
-        totalPages: Math.ceil(total / pageSize),
-      },
-      summary: {
-        totalRevenue: summary._sum.totalSales || 0,
-        totalRevenueExVat: summary._sum.salesExVat || 0,
-        totalDays: summary._count,
-      },
-    }));
+    return NextResponse.json(
+      serializeDecimal({
+        data: records,
+        pagination: {
+          page,
+          pageSize,
+          total,
+          totalPages: Math.ceil(total / pageSize),
+        },
+        summary: {
+          totalRevenue: summary._sum.totalSales || 0,
+          totalRevenueExVat: summary._sum.salesExVat || 0,
+          totalDays: summary._count,
+        },
+      }),
+    );
   } catch (error) {
     console.error("List daily income error:", error);
     return NextResponse.json(
       { error: "Eroare la incarcarea incasarilor zilnice" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -98,7 +100,7 @@ export async function POST(request: NextRequest) {
     if (!parsed.success) {
       return NextResponse.json(
         { error: "Date invalide", details: parsed.error.issues },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -109,10 +111,7 @@ export async function POST(request: NextRequest) {
       where: { id: data.locationId },
     });
     if (!location) {
-      return NextResponse.json(
-        { error: "Locatie invalida" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Locatie invalida" }, { status: 400 });
     }
 
     const parsedDate = new Date(data.date);
@@ -159,12 +158,9 @@ export async function POST(request: NextRequest) {
     ) {
       return NextResponse.json(
         { error: "Exista deja o inregistrare pentru aceasta data si locatie" },
-        { status: 409 }
+        { status: 409 },
       );
     }
-    return NextResponse.json(
-      { error: "Eroare la crearea inregistrarii" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Eroare la crearea inregistrarii" }, { status: 500 });
   }
 }

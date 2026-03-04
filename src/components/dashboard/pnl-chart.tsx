@@ -15,7 +15,20 @@ import {
 } from "recharts";
 import { ChartSkeleton } from "./skeleton";
 
-const SHORT_MONTHS = ["IAN", "FEB", "MAR", "APR", "MAI", "IUN", "IUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+const SHORT_MONTHS = [
+  "IAN",
+  "FEB",
+  "MAR",
+  "APR",
+  "MAI",
+  "IUN",
+  "IUL",
+  "AUG",
+  "SEP",
+  "OCT",
+  "NOV",
+  "DEC",
+];
 
 interface PnlChartProps {
   income: number[];
@@ -50,19 +63,35 @@ export function PnlChart({ income, totalExpenses, netProfit, loading }: PnlChart
               <XAxis dataKey="month" tick={{ fontSize: 12 }} />
               <YAxis tickFormatter={formatValue} tick={{ fontSize: 12 }} />
               <Tooltip
-                formatter={((value: number, name: string) => [
-                  `${value.toLocaleString("ro-RO")} RON`,
-                  name === "venituri" ? "Venituri" : name === "cheltuieli" ? "Cheltuieli" : "Profit Net",
-                ]) as any}
+                formatter={
+                  ((value: number, name: string) => [
+                    `${value.toLocaleString("ro-RO")} RON`,
+                    name === "venituri"
+                      ? "Venituri"
+                      : name === "cheltuieli"
+                        ? "Cheltuieli"
+                        : "Profit Net",
+                  ]) as any
+                }
               />
               <Legend
                 formatter={(value: string) =>
-                  value === "venituri" ? "Venituri" : value === "cheltuieli" ? "Cheltuieli" : "Profit Net"
+                  value === "venituri"
+                    ? "Venituri"
+                    : value === "cheltuieli"
+                      ? "Cheltuieli"
+                      : "Profit Net"
                 }
               />
               <Bar dataKey="venituri" fill="#4CAF50" radius={[4, 4, 0, 0]} />
               <Bar dataKey="cheltuieli" fill="#F44336" radius={[4, 4, 0, 0]} />
-              <Line type="monotone" dataKey="profit" stroke="#6F4E37" strokeWidth={2} dot={{ r: 3 }} />
+              <Line
+                type="monotone"
+                dataKey="profit"
+                stroke="#6F4E37"
+                strokeWidth={2}
+                dot={{ r: 3 }}
+              />
             </ComposedChart>
           </ResponsiveContainer>
         </div>

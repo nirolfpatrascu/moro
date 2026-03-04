@@ -3,9 +3,8 @@
 import { useState, useEffect } from "react";
 import { Button, Input, Modal } from "@/components/ui";
 import { useToast } from "@/components/ui/toast";
-import { VAT_MULTIPLIER } from "@/lib/constants";
+import { VAT_MULTIPLIER, PL_CATEGORIES } from "@/lib/constants";
 import { Loader2, Plus } from "lucide-react";
-import { PL_CATEGORIES } from "@/lib/utils";
 
 interface InvoiceData {
   id?: string;
@@ -78,18 +77,28 @@ const emptyForm: FormState = {
 const CATEGORY_OPTIONS: Record<string, string[]> = {
   COGS: ["BAR", "BUCATARIE", "CONSUMABILE", "TRANSPORT", "LIVRARE", "DIVERSE"],
   COSTFIX: ["CHIRII", "UTILITATI", "BANCA", "DIVERSE"],
-  OPEX: ["LICENTE", "CONSULTING", "CONTABILITATE", "AUTORIZATII", "MARKETING", "DIVERSE", "INVENTAR OBIECTE"],
+  OPEX: [
+    "LICENTE",
+    "CONSULTING",
+    "CONTABILITATE",
+    "AUTORIZATII",
+    "MARKETING",
+    "DIVERSE",
+    "INVENTAR OBIECTE",
+  ],
   TAXE: ["IMPOZIT VENIT", "TVA", "ALTE TAXE"],
-  PEOPLE: ["SALARII", "COLABORATORI", "TAXE SALARIU", "TICHETE MASA", "BONUSURI", "UNIFORME", "TRAINING"],
+  PEOPLE: [
+    "SALARII",
+    "COLABORATORI",
+    "TAXE SALARIU",
+    "TICHETE MASA",
+    "BONUSURI",
+    "UNIFORME",
+    "TRAINING",
+  ],
 };
 
-export function InvoiceFormModal({
-  open,
-  onOpenChange,
-  invoice,
-  locations,
-  onSuccess,
-}: Props) {
+export function InvoiceFormModal({ open, onOpenChange, invoice, locations, onSuccess }: Props) {
   const [form, setForm] = useState<FormState>(emptyForm);
   const [suppliers, setSuppliers] = useState<{ id: string; name: string }[]>([]);
   const [loading, setLoading] = useState(false);
@@ -146,7 +155,7 @@ export function InvoiceFormModal({
   }, [invoice, open]);
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>,
   ) => {
     const { name, value } = e.target;
     setForm((f) => ({ ...f, [name]: value }));
@@ -256,9 +265,7 @@ export function InvoiceFormModal({
         subcategory: form.subcategory || null,
       };
 
-      const url = isEdit
-        ? `/api/incoming-invoices/${invoice!.id}`
-        : "/api/incoming-invoices";
+      const url = isEdit ? `/api/incoming-invoices/${invoice!.id}` : "/api/incoming-invoices";
       const method = isEdit ? "PUT" : "POST";
 
       const res = await fetch(url, {
@@ -312,9 +319,7 @@ export function InvoiceFormModal({
 
           {/* Location */}
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-text-secondary">
-              Locatie *
-            </label>
+            <label className="text-sm font-medium text-text-secondary">Locatie *</label>
             <select
               name="locationId"
               value={form.locationId}
@@ -330,16 +335,12 @@ export function InvoiceFormModal({
                 </option>
               ))}
             </select>
-            {errors.locationId && (
-              <p className="text-xs text-danger">{errors.locationId}</p>
-            )}
+            {errors.locationId && <p className="text-xs text-danger">{errors.locationId}</p>}
           </div>
 
           {/* Supplier with create shortcut */}
           <div className="flex flex-col gap-1.5 sm:col-span-2">
-            <label className="text-sm font-medium text-text-secondary">
-              Furnizor *
-            </label>
+            <label className="text-sm font-medium text-text-secondary">Furnizor *</label>
             {!showNewSupplier ? (
               <div className="flex gap-2">
                 <select
@@ -408,16 +409,12 @@ export function InvoiceFormModal({
                 </Button>
               </div>
             )}
-            {errors.supplierId && (
-              <p className="text-xs text-danger">{errors.supplierId}</p>
-            )}
+            {errors.supplierId && <p className="text-xs text-danger">{errors.supplierId}</p>}
           </div>
 
           {/* Status */}
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-text-secondary">
-              Status
-            </label>
+            <label className="text-sm font-medium text-text-secondary">Status</label>
             <select
               name="status"
               value={form.status}
@@ -458,9 +455,7 @@ export function InvoiceFormModal({
           </p>
           <div className="grid gap-4 sm:grid-cols-3">
             <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-text-secondary">
-                Categorie P&L
-              </label>
+              <label className="text-sm font-medium text-text-secondary">Categorie P&L</label>
               <select
                 name="plCategory"
                 value={form.plCategory}
@@ -468,14 +463,14 @@ export function InvoiceFormModal({
                 className="h-10 w-full rounded-lg border border-border bg-surface px-3 text-sm text-text"
               >
                 {PL_CATEGORIES.map((c) => (
-                  <option key={c} value={c}>{c}</option>
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
                 ))}
               </select>
             </div>
             <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-text-secondary">
-                Categorie
-              </label>
+              <label className="text-sm font-medium text-text-secondary">Categorie</label>
               <select
                 name="category"
                 value={form.category}
@@ -484,7 +479,9 @@ export function InvoiceFormModal({
               >
                 <option value="">Selecteaza</option>
                 {categoryOptions.map((c) => (
-                  <option key={c} value={c}>{c}</option>
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
                 ))}
               </select>
             </div>
@@ -569,9 +566,7 @@ export function InvoiceFormModal({
 
         {/* Notes */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-text-secondary">
-            Observatii
-          </label>
+          <label className="text-sm font-medium text-text-secondary">Observatii</label>
           <textarea
             name="notes"
             value={form.notes}
@@ -583,11 +578,7 @@ export function InvoiceFormModal({
 
         {/* Actions */}
         <div className="flex justify-end gap-3 border-t border-border pt-4">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-          >
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
             Anuleaza
           </Button>
           <Button type="submit" variant="primary" loading={loading}>

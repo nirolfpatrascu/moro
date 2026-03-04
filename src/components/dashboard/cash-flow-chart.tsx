@@ -19,17 +19,10 @@ interface DataPoint {
   outflow: number;
 }
 
-export function CashFlowChart({
-  data,
-  loading,
-}: {
-  data: DataPoint[] | null;
-  loading: boolean;
-}) {
+export function CashFlowChart({ data, loading }: { data: DataPoint[] | null; loading: boolean }) {
   if (loading || !data) return <ChartSkeleton title="Cash Flow (12 luni)" />;
 
-  const formatValue = (v: number) =>
-    v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v);
+  const formatValue = (v: number) => (v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v));
 
   return (
     <Card>
@@ -54,15 +47,15 @@ export function CashFlowChart({
               <XAxis dataKey="month" tick={{ fontSize: 12 }} />
               <YAxis tickFormatter={formatValue} tick={{ fontSize: 12 }} />
               <Tooltip
-                formatter={((value: any, name: any) => [
-                  `${value.toLocaleString("ro-RO")} RON`,
-                  name === "inflow" ? "Incasari" : "Cheltuieli",
-                ]) as any}
+                formatter={
+                  ((value: any, name: any) => [
+                    `${value.toLocaleString("ro-RO")} RON`,
+                    name === "inflow" ? "Incasari" : "Cheltuieli",
+                  ]) as any
+                }
               />
               <Legend
-                formatter={(value: string) =>
-                  value === "inflow" ? "Incasari" : "Cheltuieli"
-                }
+                formatter={(value: string) => (value === "inflow" ? "Incasari" : "Cheltuieli")}
               />
               <Area
                 type="monotone"

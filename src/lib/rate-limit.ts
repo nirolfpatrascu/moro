@@ -4,11 +4,7 @@ const rateMap = new Map<string, { count: number; resetAt: number }>();
  * In-memory rate limiter.
  * Returns true if the request should be BLOCKED (rate limited).
  */
-export function rateLimit(
-  key: string,
-  limit: number,
-  windowMs: number
-): boolean {
+export function rateLimit(key: string, limit: number, windowMs: number): boolean {
   const now = Date.now();
   const entry = rateMap.get(key);
   if (!entry || now > entry.resetAt) {

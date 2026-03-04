@@ -3,11 +3,7 @@ export interface ExportColumn<T> {
   accessor: (row: T) => string | number;
 }
 
-export function exportToCSV<T>(
-  data: T[],
-  filename: string,
-  columns: ExportColumn<T>[]
-) {
+export function exportToCSV<T>(data: T[], filename: string, columns: ExportColumn<T>[]) {
   // BOM for proper UTF-8 encoding in Excel
   const BOM = "\uFEFF";
 
@@ -20,7 +16,7 @@ export function exportToCSV<T>(
         // Escape quotes in strings
         return `"${String(val).replace(/"/g, '""')}"`;
       })
-      .join(",")
+      .join(","),
   );
 
   const csv = BOM + [headers, ...rows].join("\n");

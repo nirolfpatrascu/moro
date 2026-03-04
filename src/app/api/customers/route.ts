@@ -19,10 +19,7 @@ export async function GET() {
     return NextResponse.json(customers);
   } catch (error) {
     console.error("List customers error:", error);
-    return NextResponse.json(
-      { error: "Eroare la incarcarea clientilor" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Eroare la incarcarea clientilor" }, { status: 500 });
   }
 }
 
@@ -37,7 +34,7 @@ export async function POST(request: NextRequest) {
     if (!parsed.success) {
       return NextResponse.json(
         { error: "Date invalide", details: parsed.error.issues },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -57,9 +54,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(customer, { status: 201 });
   } catch (error) {
     console.error("Create customer error:", error);
-    return NextResponse.json(
-      { error: "Eroare la crearea clientului" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Eroare la crearea clientului" }, { status: 500 });
   }
 }

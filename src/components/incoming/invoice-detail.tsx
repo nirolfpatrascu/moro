@@ -95,9 +95,10 @@ export function InvoiceDetailModal({ invoice, onClose, onMarkPaid, onEdit }: Pro
     printWindow.print();
   };
 
-  const paymentDate = invoice.paymentDay && invoice.paymentMonth && invoice.paymentYear
-    ? `${invoice.paymentDay} ${invoice.paymentMonth} ${invoice.paymentYear}`
-    : null;
+  const paymentDate =
+    invoice.paymentDay && invoice.paymentMonth && invoice.paymentYear
+      ? `${invoice.paymentDay} ${invoice.paymentMonth} ${invoice.paymentYear}`
+      : null;
 
   return (
     <Modal
@@ -111,7 +112,9 @@ export function InvoiceDetailModal({ invoice, onClose, onMarkPaid, onEdit }: Pro
         {/* Print-only header (hidden in modal) */}
         <div className="hidden print:block">
           <h1>Factura {invoice.invoiceNumber}</h1>
-          <h2>{invoice.supplier.name} — {invoice.location.name}</h2>
+          <h2>
+            {invoice.supplier.name} — {invoice.location.name}
+          </h2>
         </div>
 
         <div className="space-y-1">
@@ -128,11 +131,7 @@ export function InvoiceDetailModal({ invoice, onClose, onMarkPaid, onEdit }: Pro
           <DetailRow label="Data Emitere" value={invoice.issueDate} />
           <DetailRow
             label="Scadenta"
-            value={
-              invoice.dueDate
-                ? new Date(invoice.dueDate).toLocaleDateString("ro-RO")
-                : null
-            }
+            value={invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString("ro-RO") : null}
           />
           <DetailRow label="Descriere" value={invoice.itemDescription} />
           <DetailRow label="Cantitate" value={invoice.qty > 0 ? invoice.qty : "-"} />
@@ -152,9 +151,7 @@ export function InvoiceDetailModal({ invoice, onClose, onMarkPaid, onEdit }: Pro
           <DetailRow
             label="Total"
             value={
-              <span className="text-base font-bold">
-                {formatCurrency(invoice.totalAmount)}
-              </span>
+              <span className="text-base font-bold">{formatCurrency(invoice.totalAmount)}</span>
             }
           />
         </div>
@@ -180,9 +177,7 @@ export function InvoiceDetailModal({ invoice, onClose, onMarkPaid, onEdit }: Pro
           </p>
           <DetailRow label="Categorie P&L" value={<Badge>{invoice.plCategory}</Badge>} />
           <DetailRow label="Categorie" value={invoice.category} />
-          {invoice.subcategory && (
-            <DetailRow label="Subcategorie" value={invoice.subcategory} />
-          )}
+          {invoice.subcategory && <DetailRow label="Subcategorie" value={invoice.subcategory} />}
           <DetailRow label="Perioada" value={`${invoice.month} ${invoice.year}`} />
         </div>
 
@@ -204,21 +199,13 @@ export function InvoiceDetailModal({ invoice, onClose, onMarkPaid, onEdit }: Pro
         </Button>
         <div className="flex items-center gap-2">
           {invoice.status !== "PAID" && onMarkPaid && (
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={() => onMarkPaid(invoice)}
-            >
+            <Button variant="primary" size="sm" onClick={() => onMarkPaid(invoice)}>
               <CheckCircle className="h-4 w-4" />
               Marcheaza ca platita
             </Button>
           )}
           {onEdit && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onEdit(invoice)}
-            >
+            <Button variant="outline" size="sm" onClick={() => onEdit(invoice)}>
               <Pencil className="h-4 w-4" />
               Editeaza
             </Button>

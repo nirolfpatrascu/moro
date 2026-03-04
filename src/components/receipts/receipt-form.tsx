@@ -4,11 +4,7 @@ import { useState, useEffect } from "react";
 import { Button, Input, Modal } from "@/components/ui";
 import { useToast } from "@/components/ui/toast";
 import { Loader2, Zap } from "lucide-react";
-import {
-  RECEIPT_TYPES,
-  PAYMENT_METHODS,
-  RECEIPT_CATEGORIES,
-} from "@/lib/validations/receipt";
+import { RECEIPT_TYPES, PAYMENT_METHODS, RECEIPT_CATEGORIES } from "@/lib/validations/receipt";
 
 interface ReceiptData {
   id?: string;
@@ -100,11 +96,11 @@ export function ReceiptFormModal({
       });
     }
     setErrors({});
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [receipt, open, defaultLocationId]);
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>,
   ) => {
     const { name, value } = e.target;
     setForm((f) => ({ ...f, [name]: value }));
@@ -243,16 +239,12 @@ export function ReceiptFormModal({
               errors.amount ? "border-danger" : "border-border"
             }`}
           />
-          {errors.amount && (
-            <p className="mt-1 text-xs text-danger">{errors.amount}</p>
-          )}
+          {errors.amount && <p className="mt-1 text-xs text-danger">{errors.amount}</p>}
         </div>
 
         {/* Location */}
         <div>
-          <label className="mb-1.5 block text-sm font-medium text-text-secondary">
-            Locatie *
-          </label>
+          <label className="mb-1.5 block text-sm font-medium text-text-secondary">Locatie *</label>
           <div className="grid grid-cols-2 gap-2">
             {locations.map((l) => (
               <button
@@ -272,16 +264,12 @@ export function ReceiptFormModal({
               </button>
             ))}
           </div>
-          {errors.locationId && (
-            <p className="mt-1 text-xs text-danger">{errors.locationId}</p>
-          )}
+          {errors.locationId && <p className="mt-1 text-xs text-danger">{errors.locationId}</p>}
         </div>
 
         {/* Type selector */}
         <div>
-          <label className="mb-1.5 block text-sm font-medium text-text-secondary">
-            Tip
-          </label>
+          <label className="mb-1.5 block text-sm font-medium text-text-secondary">Tip</label>
           <div className="grid grid-cols-3 gap-2">
             {RECEIPT_TYPES.map((t) => (
               <button
@@ -319,9 +307,7 @@ export function ReceiptFormModal({
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-medium text-text-secondary">
-                  Categorie
-                </label>
+                <label className="text-sm font-medium text-text-secondary">Categorie</label>
                 <select
                   name="category"
                   value={form.category}
@@ -330,7 +316,9 @@ export function ReceiptFormModal({
                 >
                   <option value="">Selecteaza</option>
                   {RECEIPT_CATEGORIES.map((c) => (
-                    <option key={c} value={c}>{c}</option>
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -352,9 +340,7 @@ export function ReceiptFormModal({
             />
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-text-secondary">
-                Observatii
-              </label>
+              <label className="text-sm font-medium text-text-secondary">Observatii</label>
               <textarea
                 name="notes"
                 value={form.notes}
@@ -368,11 +354,7 @@ export function ReceiptFormModal({
 
         {/* Actions */}
         <div className="flex justify-end gap-3 border-t border-border pt-4">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-          >
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
             Anuleaza
           </Button>
           <Button type="submit" variant="primary" loading={loading}>

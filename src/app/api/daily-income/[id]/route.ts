@@ -6,10 +6,7 @@ import { requireAuth } from "@/lib/auth-guard";
 /**
  * GET /api/daily-income/[id]
  */
-export async function GET(
-  _request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const denied = await requireAuth();
     if (denied) return denied;
@@ -29,20 +26,14 @@ export async function GET(
     return NextResponse.json(serializeDecimal(record));
   } catch (error) {
     console.error("Get daily income error:", error);
-    return NextResponse.json(
-      { error: "Eroare la incarcarea inregistrarii" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Eroare la incarcarea inregistrarii" }, { status: 500 });
   }
 }
 
 /**
  * PUT /api/daily-income/[id]
  */
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const denied = await requireAuth();
     if (denied) return denied;
@@ -54,7 +45,7 @@ export async function PUT(
     if (!parsed.success) {
       return NextResponse.json(
         { error: "Date invalide", details: parsed.error.issues },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -66,10 +57,22 @@ export async function PUT(
     const data = parsed.data;
     const updateData: Record<string, unknown> = {};
     const numericFields = [
-      "totalSales", "tva", "salesExVat", "receiptCount", "avgReceipt",
-      "barSales", "barProductCount", "kitchenSales", "kitchenProductCount",
-      "cashAmount", "cardAmount", "transferAmount", "accountAmount",
-      "deliveryAmount", "tipsFiscal", "tipsTotal",
+      "totalSales",
+      "tva",
+      "salesExVat",
+      "receiptCount",
+      "avgReceipt",
+      "barSales",
+      "barProductCount",
+      "kitchenSales",
+      "kitchenProductCount",
+      "cashAmount",
+      "cardAmount",
+      "transferAmount",
+      "accountAmount",
+      "deliveryAmount",
+      "tipsFiscal",
+      "tipsTotal",
     ] as const;
 
     for (const field of numericFields) {
@@ -109,13 +112,10 @@ export async function PUT(
     ) {
       return NextResponse.json(
         { error: "Exista deja o inregistrare pentru aceasta data si locatie" },
-        { status: 409 }
+        { status: 409 },
       );
     }
-    return NextResponse.json(
-      { error: "Eroare la actualizarea inregistrarii" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Eroare la actualizarea inregistrarii" }, { status: 500 });
   }
 }
 
@@ -124,7 +124,7 @@ export async function PUT(
  */
 export async function DELETE(
   _request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const denied = await requireAuth();
@@ -142,9 +142,6 @@ export async function DELETE(
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Delete daily income error:", error);
-    return NextResponse.json(
-      { error: "Eroare la stergerea inregistrarii" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Eroare la stergerea inregistrarii" }, { status: 500 });
   }
 }

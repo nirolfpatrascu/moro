@@ -14,7 +14,10 @@ interface Transaction {
   location: string;
 }
 
-const TYPE_CONFIG: Record<string, { label: string; variant: "success" | "warning" | "danger" | "default" | "outline"; sign: string }> = {
+const TYPE_CONFIG: Record<
+  string,
+  { label: string; variant: "success" | "warning" | "danger" | "default" | "outline"; sign: string }
+> = {
   receipt: { label: "Incasare", variant: "success", sign: "+" },
   refund: { label: "Retur", variant: "warning", sign: "-" },
   expense: { label: "Cheltuiala", variant: "danger", sign: "-" },
@@ -56,9 +59,7 @@ export function RecentTransactions({
                       {config.label}
                     </Badge>
                     <div className="min-w-0">
-                      <p className="text-sm text-text truncate max-w-[200px]">
-                        {tx.description}
-                      </p>
+                      <p className="text-sm text-text truncate max-w-[200px]">{tx.description}</p>
                       <p className="text-xs text-text-muted">
                         {tx.location} &middot; {timeAgo}
                       </p>
@@ -69,7 +70,8 @@ export function RecentTransactions({
                       config.sign === "+" ? "text-success" : "text-danger"
                     }`}
                   >
-                    {config.sign}{formatCurrency(tx.amount)}
+                    {config.sign}
+                    {formatCurrency(tx.amount)}
                   </span>
                 </div>
               );

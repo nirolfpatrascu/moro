@@ -58,7 +58,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             className={cn(
               "rounded-card border p-4 shadow-lg",
               "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:slide-out-to-right-full data-[state=open]:slide-in-from-right-full",
-              variantStyles[t.variant ?? "default"]
+              variantStyles[t.variant ?? "default"],
             )}
           >
             <div className="flex items-start justify-between gap-2">

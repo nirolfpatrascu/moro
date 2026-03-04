@@ -11,13 +11,7 @@ import { TopSuppliers } from "@/components/dashboard/top-suppliers";
 import { RecentTransactions } from "@/components/dashboard/recent-transactions";
 import { OverdueAlerts } from "@/components/dashboard/overdue-alerts";
 import { formatCurrency } from "@/lib/utils";
-import {
-  TrendingUp,
-  Receipt,
-  Wallet,
-  AlertTriangle,
-  RefreshCw,
-} from "lucide-react";
+import { TrendingUp, Receipt, Wallet, AlertTriangle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui";
 
 type Period = "month" | "quarter" | "year";
@@ -82,7 +76,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     setMotivationalMessage(
-      MOTIVATIONAL_MESSAGES[Math.floor(Math.random() * MOTIVATIONAL_MESSAGES.length)]
+      MOTIVATIONAL_MESSAGES[Math.floor(Math.random() * MOTIVATIONAL_MESSAGES.length)],
     );
     setGreeting(getGreeting());
   }, []);
@@ -190,9 +184,7 @@ export default function DashboardPage() {
               {greeting ? `${greeting}, Moro!` : "Bun venit, Moro!"} &#9749;
             </h2>
             {motivationalMessage && (
-              <p className="mt-3 text-lg leading-relaxed text-white/85">
-                {motivationalMessage}
-              </p>
+              <p className="mt-3 text-lg leading-relaxed text-white/85">{motivationalMessage}</p>
             )}
           </div>
         </div>
@@ -210,7 +202,9 @@ export default function DashboardPage() {
             className="h-8 rounded-lg border border-gray-200 bg-white px-2 text-xs"
           >
             {(["month", "quarter", "year"] as Period[]).map((p) => (
-              <option key={p} value={p}>{periodLabels[p]}</option>
+              <option key={p} value={p}>
+                {periodLabels[p]}
+              </option>
             ))}
           </select>
 
@@ -221,16 +215,13 @@ export default function DashboardPage() {
           >
             <option value="">Toate locațiile</option>
             {locations.map((l) => (
-              <option key={l.id} value={l.id}>{l.name}</option>
+              <option key={l.id} value={l.id}>
+                {l.name}
+              </option>
             ))}
           </select>
 
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleRefresh}
-            className="h-8"
-          >
+          <Button variant="outline" size="sm" onClick={handleRefresh} className="h-8">
             <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} />
           </Button>
 
@@ -281,7 +272,7 @@ export default function DashboardPage() {
             <StatCard
               title="Restanțe"
               value={formatCurrency(
-                (summary.outstandingPayables || 0) + (summary.outstandingReceivables || 0)
+                (summary.outstandingPayables || 0) + (summary.outstandingReceivables || 0),
               )}
               icon={<AlertTriangle className="h-4 w-4" />}
               subtitle={`${(summary.outstandingPayablesCount || 0) + (summary.outstandingReceivablesCount || 0)} facturi`}

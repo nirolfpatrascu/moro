@@ -32,7 +32,7 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
             "focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary",
             "disabled:cursor-not-allowed disabled:opacity-50",
             error ? "border-danger" : "border-border",
-            className
+            className,
           )}
           {...props}
         >
@@ -50,7 +50,7 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
         {error && <p className="text-xs text-danger">{error}</p>}
       </div>
     );
-  }
+  },
 );
 Select.displayName = "Select";
 

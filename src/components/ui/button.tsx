@@ -13,16 +13,12 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variantStyles: Record<Variant, string> = {
-  primary:
-    "bg-primary text-white hover:bg-primary-dark active:bg-primary-dark shadow-sm",
-  secondary:
-    "bg-secondary text-text hover:bg-secondary-light active:bg-secondary shadow-sm",
+  primary: "bg-primary text-white hover:bg-primary-dark active:bg-primary-dark shadow-sm",
+  secondary: "bg-secondary text-text hover:bg-secondary-light active:bg-secondary shadow-sm",
   outline:
     "border border-border bg-transparent text-text hover:bg-surface-hover active:bg-surface-hover",
-  ghost:
-    "bg-transparent text-text-secondary hover:bg-surface-hover active:bg-surface-hover",
-  danger:
-    "bg-danger text-white hover:bg-danger/90 active:bg-danger/80 shadow-sm",
+  ghost: "bg-transparent text-text-secondary hover:bg-surface-hover active:bg-surface-hover",
+  danger: "bg-danger text-white hover:bg-danger/90 active:bg-danger/80 shadow-sm",
 };
 
 const sizeStyles: Record<Size, string> = {
@@ -40,17 +36,13 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           "inline-flex items-center justify-center rounded-lg font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 disabled:pointer-events-none disabled:opacity-50",
           variantStyles[variant],
           sizeStyles[size],
-          className
+          className,
         )}
         disabled={disabled || loading}
         {...props}
       >
         {loading && (
-          <svg
-            className="h-4 w-4 animate-spin"
-            viewBox="0 0 24 24"
-            fill="none"
-          >
+          <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
             <circle
               className="opacity-25"
               cx="12"
@@ -69,7 +61,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         {children}
       </button>
     );
-  }
+  },
 );
 Button.displayName = "Button";
 

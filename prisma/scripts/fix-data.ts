@@ -36,7 +36,7 @@ async function main() {
       fixedIncoming++;
       if (fixedIncoming <= 5) {
         console.log(
-          `  [incoming] ${inv.invoiceNumber}: remaining ${currentRemaining} → ${correctRemaining}, status ${inv.status} → ${correctStatus}`
+          `  [incoming] ${inv.invoiceNumber}: remaining ${currentRemaining} → ${correctRemaining}, status ${inv.status} → ${correctStatus}`,
         );
       }
     }
@@ -68,7 +68,7 @@ async function main() {
       fixedOutgoing++;
       if (fixedOutgoing <= 5) {
         console.log(
-          `  [outgoing] ${inv.invoiceNumber}: unpaid ${currentUnpaid} → ${correctUnpaid}, status ${inv.status} → ${correctStatus}`
+          `  [outgoing] ${inv.invoiceNumber}: unpaid ${currentUnpaid} → ${correctUnpaid}, status ${inv.status} → ${correctStatus}`,
         );
       }
     }

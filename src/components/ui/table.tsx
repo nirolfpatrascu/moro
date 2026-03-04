@@ -72,19 +72,19 @@ export function Table<T extends Record<string, unknown>>({
                   className={cn(
                     "px-4 py-2.5 text-left text-xs font-medium text-[#9B8B7F]",
                     col.sortable && "cursor-pointer select-none hover:text-[#2D1B0E]",
-                    col.className
+                    col.className,
                   )}
                   onClick={col.sortable ? () => handleSort(col.key) : undefined}
                 >
                   <span className="inline-flex items-center gap-1">
                     {col.header}
-                    {col.sortable && sortKey === col.key && (
-                      sortDir === "asc" ? (
+                    {col.sortable &&
+                      sortKey === col.key &&
+                      (sortDir === "asc" ? (
                         <ChevronUp className="h-3 w-3" />
                       ) : (
                         <ChevronDown className="h-3 w-3" />
-                      )
-                    )}
+                      ))}
                   </span>
                 </th>
               ))}
@@ -106,15 +106,13 @@ export function Table<T extends Record<string, unknown>>({
                   key={i}
                   className={cn(
                     "border-b border-gray-50 last:border-0 transition-colors hover:bg-[#FFF8F0]/50",
-                    onRowClick && "cursor-pointer"
+                    onRowClick && "cursor-pointer",
                   )}
                   onClick={onRowClick ? () => onRowClick(row) : undefined}
                 >
                   {columns.map((col) => (
                     <td key={col.key} className={cn("px-4 py-2.5 text-sm", col.className)}>
-                      {col.render
-                        ? col.render(row)
-                        : (row[col.key] as ReactNode)}
+                      {col.render ? col.render(row) : (row[col.key] as ReactNode)}
                     </td>
                   ))}
                 </tr>

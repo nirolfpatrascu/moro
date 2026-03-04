@@ -15,9 +15,22 @@ import {
   Cell,
 } from "recharts";
 import { ChartSkeleton } from "./skeleton";
+import { COGS_CATS } from "@/lib/constants";
 
-const SHORT_MONTHS = ["IAN", "FEB", "MAR", "APR", "MAI", "IUN", "IUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
-const COGS_CATS = ["BAR", "BUCATARIE", "CONSUMABILE", "TRANSPORT", "LIVRARE", "DIVERSE"];
+const SHORT_MONTHS = [
+  "IAN",
+  "FEB",
+  "MAR",
+  "APR",
+  "MAI",
+  "IUN",
+  "IUL",
+  "AUG",
+  "SEP",
+  "OCT",
+  "NOV",
+  "DEC",
+];
 const COLORS = ["#6F4E37", "#D4A574", "#C4A882", "#FF9800", "#4CAF50", "#F44336"];
 
 interface CogsChartsProps {
@@ -67,10 +80,12 @@ export function CogsCharts({ categories, loading }: CogsChartsProps) {
                 <XAxis dataKey="month" tick={{ fontSize: 11 }} />
                 <YAxis tickFormatter={formatValue} tick={{ fontSize: 12 }} />
                 <Tooltip
-                  formatter={((value: number, name: string) => [
-                    `${value.toLocaleString("ro-RO")} RON`,
-                    name,
-                  ]) as any}
+                  formatter={
+                    ((value: number, name: string) => [
+                      `${value.toLocaleString("ro-RO")} RON`,
+                      name,
+                    ]) as any
+                  }
                 />
                 <Legend />
                 {COGS_CATS.map((cat, i) => (
@@ -103,9 +118,10 @@ export function CogsCharts({ categories, loading }: CogsChartsProps) {
                     outerRadius={90}
                     dataKey="value"
                     nameKey="name"
-                    label={((props: { name: string; percent: number }) =>
-                      `${props.name} ${(props.percent * 100).toFixed(0)}%`
-                    ) as any}
+                    label={
+                      ((props: { name: string; percent: number }) =>
+                        `${props.name} ${(props.percent * 100).toFixed(0)}%`) as any
+                    }
                     labelLine={false}
                   >
                     {pieData.map((_, index) => (
@@ -113,10 +129,9 @@ export function CogsCharts({ categories, loading }: CogsChartsProps) {
                     ))}
                   </Pie>
                   <Tooltip
-                    formatter={((value: number) => [
-                      `${value.toLocaleString("ro-RO")} RON`,
-                      "Total",
-                    ]) as any}
+                    formatter={
+                      ((value: number) => [`${value.toLocaleString("ro-RO")} RON`, "Total"]) as any
+                    }
                   />
                   <Legend />
                 </PieChart>

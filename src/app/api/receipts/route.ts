@@ -64,7 +64,10 @@ export async function GET(request: NextRequest) {
     ]);
 
     // Compute daily totals for the current page results
-    const dailyTotals: Record<string, { sales: number; refunds: number; expenses: number; net: number }> = {};
+    const dailyTotals: Record<
+      string,
+      { sales: number; refunds: number; expenses: number; net: number }
+    > = {};
     for (const r of receipts) {
       const dateKey = r.date.toISOString().split("T")[0];
       if (!dailyTotals[dateKey]) {
@@ -83,22 +86,21 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    return NextResponse.json(serializeDecimal({
-      data: receipts,
-      dailyTotals,
-      pagination: {
-        page,
-        pageSize,
-        total,
-        totalPages: Math.ceil(total / pageSize),
-      },
-    }));
+    return NextResponse.json(
+      serializeDecimal({
+        data: receipts,
+        dailyTotals,
+        pagination: {
+          page,
+          pageSize,
+          total,
+          totalPages: Math.ceil(total / pageSize),
+        },
+      }),
+    );
   } catch (error) {
     console.error("List receipts error:", error);
-    return NextResponse.json(
-      { error: "Eroare la incarcarea incasarilor" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Eroare la incarcarea incasarilor" }, { status: 500 });
   }
 }
 
@@ -117,7 +119,7 @@ export async function POST(request: NextRequest) {
     if (!parsed.success) {
       return NextResponse.json(
         { error: "Date invalide", details: parsed.error.issues },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -144,9 +146,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(serializeDecimal(receipt), { status: 201 });
   } catch (error) {
     console.error("Create receipt error:", error);
-    return NextResponse.json(
-      { error: "Eroare la crearea incasarii" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Eroare la crearea incasarii" }, { status: 500 });
   }
 }

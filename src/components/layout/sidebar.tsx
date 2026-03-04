@@ -51,22 +51,23 @@ export function Sidebar() {
         className="fixed left-4 top-4 z-50 rounded-lg bg-white p-2 shadow-md lg:hidden"
         onClick={() => setOpen(!open)}
       >
-        {open ? <X className="h-5 w-5 text-[#2D1B0E]" /> : <Menu className="h-5 w-5 text-[#2D1B0E]" />}
+        {open ? (
+          <X className="h-5 w-5 text-[#2D1B0E]" />
+        ) : (
+          <Menu className="h-5 w-5 text-[#2D1B0E]" />
+        )}
       </button>
 
       {/* Overlay */}
       {open && (
-        <div
-          className="fixed inset-0 z-30 bg-black/30 lg:hidden"
-          onClick={() => setOpen(false)}
-        />
+        <div className="fixed inset-0 z-30 bg-black/30 lg:hidden" onClick={() => setOpen(false)} />
       )}
 
       {/* Sidebar */}
       <aside
         className={cn(
           "fixed left-0 top-0 z-40 flex h-screen w-[16rem] flex-col bg-[#6F4E37] pl-4 transition-transform duration-200 lg:translate-x-0",
-          open ? "translate-x-0" : "-translate-x-full"
+          open ? "translate-x-0" : "-translate-x-full",
         )}
       >
         {/* Logo */}
@@ -92,9 +93,7 @@ export function Sidebar() {
               if (!("href" in item) || !item.href) return null;
               const Icon = item.icon!;
               const isActive =
-                item.href === "/"
-                  ? pathname === "/"
-                  : pathname.startsWith(item.href);
+                item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
 
               return (
                 <li key={item.href}>
@@ -105,7 +104,7 @@ export function Sidebar() {
                       "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                       isActive
                         ? "bg-white/15 text-white"
-                        : "text-white/70 hover:bg-white/10 hover:text-white"
+                        : "text-white/70 hover:bg-white/10 hover:text-white",
                     )}
                   >
                     <Icon className="h-4 w-4 shrink-0" />

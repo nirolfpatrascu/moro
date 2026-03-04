@@ -29,11 +29,9 @@ export function parseExcelSheets(buffer: Buffer): {
 
     // First non-empty row is the header
     const headerRow = rawData.find((row) =>
-      row.some((cell) => cell !== null && cell !== undefined && String(cell).trim() !== "")
+      row.some((cell) => cell !== null && cell !== undefined && String(cell).trim() !== ""),
     );
-    const headers = headerRow
-      ? headerRow.map((h) => String(h ?? "").trim()).filter(Boolean)
-      : [];
+    const headers = headerRow ? headerRow.map((h) => String(h ?? "").trim()).filter(Boolean) : [];
 
     // Count data rows (excluding header)
     const dataRows = rawData.filter((row) => {
@@ -67,7 +65,7 @@ export function readMappedRows(
   workbook: XLSX.WorkBook,
   sheetName: string,
   mapping: ColumnMapping,
-  limit?: number
+  limit?: number,
 ): { rows: Record<string, unknown>[]; errors: { row: number; message: string }[] } {
   const sheet = workbook.Sheets[sheetName];
   if (!sheet) throw new Error(`Sheet "${sheetName}" not found`);
@@ -186,13 +184,25 @@ export function parseDateFlexible(value: unknown): Date | null {
 
 /** Romanian day-of-week abbreviations */
 const DAY_ABBREVS: Record<string, string> = {
-  L: "L", Lu: "L", LU: "L",
-  Ma: "Ma", MA: "Ma",
-  Mi: "Mi", MI: "Mi",
-  J: "J", JO: "J", Jo: "J",
-  V: "V", VI: "V", Vi: "V",
-  S: "S", SA: "S", Sa: "S",
-  D: "D", DU: "D", Du: "D",
+  L: "L",
+  Lu: "L",
+  LU: "L",
+  Ma: "Ma",
+  MA: "Ma",
+  Mi: "Mi",
+  MI: "Mi",
+  J: "J",
+  JO: "J",
+  Jo: "J",
+  V: "V",
+  VI: "V",
+  Vi: "V",
+  S: "S",
+  SA: "S",
+  Sa: "S",
+  D: "D",
+  DU: "D",
+  Du: "D",
 };
 
 export interface IncomeRow {
@@ -228,7 +238,7 @@ export interface IncomeRow {
 export function readIncomeRows(
   workbook: XLSX.WorkBook,
   sheetName: string,
-  limit?: number
+  limit?: number,
 ): { rows: IncomeRow[]; errors: { row: number; message: string }[] } {
   const sheet = workbook.Sheets[sheetName];
   if (!sheet) throw new Error(`Sheet "${sheetName}" not found`);
@@ -251,7 +261,9 @@ export function readIncomeRows(
   for (let i = 0; i < Math.min(rawData.length, 10); i++) {
     const row = rawData[i];
     const hasMarker = row.some((cell) => {
-      const s = String(cell ?? "").trim().toUpperCase();
+      const s = String(cell ?? "")
+        .trim()
+        .toUpperCase();
       return s === "MAGNOLIA" || s === "ORIZONT";
     });
     if (hasMarker) {
@@ -272,7 +284,9 @@ export function readIncomeRows(
   let mgIdx = -1;
   let oIdx = -1;
   for (let c = 0; c < headerRow.length; c++) {
-    const s = String(headerRow[c] ?? "").trim().toUpperCase();
+    const s = String(headerRow[c] ?? "")
+      .trim()
+      .toUpperCase();
     if (s === "MAGNOLIA" && mgIdx === -1) mgIdx = c;
     if (s === "ORIZONT" && oIdx === -1) oIdx = c;
   }
@@ -284,7 +298,9 @@ export function readIncomeRows(
   let dateIdx = -1;
   let ziIdx = -1;
   for (let c = 0; c < (mgIdx > -1 ? mgIdx : headerRow.length); c++) {
-    const s = String(headerRow[c] ?? "").trim().toUpperCase();
+    const s = String(headerRow[c] ?? "")
+      .trim()
+      .toUpperCase();
     if (s === "LUNA" || s.includes("LUNA")) lunaIdx = c;
     if (s === "SAPT" || s.includes("SAPT")) saptIdx = c;
     if (s === "DATE" || s === "DATA") dateIdx = c;
@@ -346,10 +362,7 @@ export function readIncomeRows(
       return values;
     };
 
-    const buildIncomeRow = (
-      locCode: "MG" | "O",
-      vals: number[]
-    ): IncomeRow => ({
+    const buildIncomeRow = (locCode: "MG" | "O", vals: number[]): IncomeRow => ({
       date: dateVal!,
       dayOfWeek,
       month,

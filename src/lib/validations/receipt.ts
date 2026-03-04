@@ -38,10 +38,4 @@ export const PAYMENT_METHODS = [
   { value: "TRANSFER", label: "Transfer" },
 ];
 
-export const RECEIPT_CATEGORIES = [
-  "BAR",
-  "BUCATARIE",
-  "LIVRARE",
-  "CATERING",
-  "DIVERSE",
-];
+export const RECEIPT_CATEGORIES = ["BAR", "BUCATARIE", "LIVRARE", "CATERING", "DIVERSE"];

@@ -1,14 +1,7 @@
 "use client";
 
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui";
-import {
-  PieChart,
-  Pie,
-  Cell,
-  Tooltip,
-  ResponsiveContainer,
-  Legend,
-} from "recharts";
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { ChartSkeleton } from "./skeleton";
 
 interface DataPoint {
@@ -52,9 +45,9 @@ export function ExpenseByCategory({
                   outerRadius={90}
                   dataKey="amount"
                   nameKey="category"
-                  label={((props: any) =>
-                    `${props.name} ${(props.percent * 100).toFixed(0)}%`
-                  ) as any}
+                  label={
+                    ((props: any) => `${props.name} ${(props.percent * 100).toFixed(0)}%`) as any
+                  }
                   labelLine={false}
                 >
                   {data.map((_, index) => (
@@ -62,10 +55,9 @@ export function ExpenseByCategory({
                   ))}
                 </Pie>
                 <Tooltip
-                  formatter={((value: any) => [
-                    `${value.toLocaleString("ro-RO")} RON`,
-                    "Total",
-                  ]) as any}
+                  formatter={
+                    ((value: any) => [`${value.toLocaleString("ro-RO")} RON`, "Total"]) as any
+                  }
                 />
                 <Legend />
               </PieChart>

@@ -14,9 +14,6 @@ export async function GET() {
     return NextResponse.json(locations);
   } catch (error) {
     console.error("List locations error:", error);
-    return NextResponse.json(
-      { error: "Eroare la incarcarea locatiilor" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Eroare la incarcarea locatiilor" }, { status: 500 });
   }
 }

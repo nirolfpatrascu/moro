@@ -128,9 +128,7 @@ export function SearchCommand() {
       {open && query.length >= 2 && (
         <div className="absolute right-0 top-full z-50 mt-1 w-80 overflow-hidden rounded-xl border border-gray-100 bg-white shadow-lg">
           {loading ? (
-            <div className="px-4 py-6 text-center text-xs text-[#9B8B7F]">
-              Se cauta...
-            </div>
+            <div className="px-4 py-6 text-center text-xs text-[#9B8B7F]">Se cauta...</div>
           ) : !hasResults ? (
             <div className="px-4 py-6 text-center text-xs text-[#9B8B7F]">
               Niciun rezultat pentru &ldquo;{query}&rdquo;

@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
     if (!parsed.success) {
       return NextResponse.json(
         { error: "Date invalide", details: parsed.error.issues },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -56,9 +56,6 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("Income preview error:", error);
-    return NextResponse.json(
-      { error: "Eroare la previzualizare incasari" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Eroare la previzualizare incasari" }, { status: 500 });
   }
 }

@@ -19,10 +19,7 @@ export async function GET() {
     return NextResponse.json(suppliers);
   } catch (error) {
     console.error("List suppliers error:", error);
-    return NextResponse.json(
-      { error: "Eroare la incarcarea furnizorilor" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Eroare la incarcarea furnizorilor" }, { status: 500 });
   }
 }
 
@@ -37,7 +34,7 @@ export async function POST(request: NextRequest) {
     if (!parsed.success) {
       return NextResponse.json(
         { error: "Date invalide", details: parsed.error.issues },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -58,9 +55,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(supplier, { status: 201 });
   } catch (error) {
     console.error("Create supplier error:", error);
-    return NextResponse.json(
-      { error: "Eroare la crearea furnizorului" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Eroare la crearea furnizorului" }, { status: 500 });
   }
 }

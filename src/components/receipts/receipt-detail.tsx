@@ -86,20 +86,10 @@ export function ReceiptDetailModal({ receipt, onClose, onEdit }: Props) {
       <div className="space-y-1">
         <DetailRow
           label="Suma"
-          value={
-            <span className="text-lg font-bold">
-              {formatCurrency(receipt.amount)}
-            </span>
-          }
+          value={<span className="text-lg font-bold">{formatCurrency(receipt.amount)}</span>}
         />
-        <DetailRow
-          label="Tip"
-          value={<Badge variant={typeInfo.variant}>{typeInfo.label}</Badge>}
-        />
-        <DetailRow
-          label="Metoda de plata"
-          value={paymentInfo?.label || receipt.paymentMethod}
-        />
+        <DetailRow label="Tip" value={<Badge variant={typeInfo.variant}>{typeInfo.label}</Badge>} />
+        <DetailRow label="Metoda de plata" value={paymentInfo?.label || receipt.paymentMethod} />
         <DetailRow
           label="Locatie"
           value={
@@ -108,18 +98,12 @@ export function ReceiptDetailModal({ receipt, onClose, onEdit }: Props) {
             </Badge>
           }
         />
-        <DetailRow
-          label="Data"
-          value={new Date(receipt.date).toLocaleDateString("ro-RO")}
-        />
+        <DetailRow label="Data" value={new Date(receipt.date).toLocaleDateString("ro-RO")} />
         {receipt.category && <DetailRow label="Categorie" value={receipt.category} />}
         {receipt.receiptNumber && <DetailRow label="Nr. bon" value={receipt.receiptNumber} />}
         {receipt.description && <DetailRow label="Descriere" value={receipt.description} />}
         {receipt.notes && <DetailRow label="Observatii" value={receipt.notes} />}
-        <DetailRow
-          label="Creat la"
-          value={new Date(receipt.createdAt).toLocaleString("ro-RO")}
-        />
+        <DetailRow label="Creat la" value={new Date(receipt.createdAt).toLocaleString("ro-RO")} />
       </div>
 
       <div className="mt-4 flex items-center justify-between border-t border-border pt-4">

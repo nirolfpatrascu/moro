@@ -1,22 +1,9 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import {
-  Card,
-  CardContent,
-  Button,
-  Modal,
-} from "@/components/ui";
+import { Card, CardContent, Button, Modal } from "@/components/ui";
 import { useToast } from "@/components/ui/toast";
-import {
-  Plus,
-  Search,
-  Pencil,
-  Trash2,
-  Truck,
-  FileInput,
-  Download,
-} from "lucide-react";
+import { Plus, Search, Pencil, Trash2, Truck, FileInput, Download } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { SupplierFormModal } from "@/components/suppliers/supplier-form";
 import { exportToCSV } from "@/lib/export";
@@ -55,7 +42,9 @@ export default function SuppliersPage() {
     try {
       const res = await fetch("/api/suppliers");
       const data = await res.json();
-      const supplierList: { id: string; name: string }[] = Array.isArray(data) ? data : data.data || [];
+      const supplierList: { id: string; name: string }[] = Array.isArray(data)
+        ? data
+        : data.data || [];
 
       // Fetch incoming invoices to compute counts and total spend per supplier
       const invoicesRes = await fetch("/api/incoming-invoices?pageSize=500");
@@ -89,9 +78,7 @@ export default function SuppliersPage() {
 
   // Filter locally by search
   const filtered = search
-    ? suppliers.filter((s) =>
-        s.name.toLowerCase().includes(search.toLowerCase())
-      )
+    ? suppliers.filter((s) => s.name.toLowerCase().includes(search.toLowerCase()))
     : suppliers;
 
   // ── Delete ──────────────────────────────────────────────
@@ -136,9 +123,7 @@ export default function SuppliersPage() {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-semibold text-[#2D1B0E]">Furnizori</h2>
-          <p className="mt-0.5 text-xs text-[#9B8B7F]">
-            {suppliers.length} furnizori
-          </p>
+          <p className="mt-0.5 text-xs text-[#9B8B7F]">{suppliers.length} furnizori</p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={handleExport}>
@@ -181,9 +166,15 @@ export default function SuppliersPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border bg-background">
-                <th className="px-4 py-3 text-left font-medium text-text-secondary">Nume furnizor</th>
-                <th className="px-4 py-3 text-center font-medium text-text-secondary">Nr. facturi</th>
-                <th className="px-4 py-3 text-right font-medium text-text-secondary">Total cheltuieli</th>
+                <th className="px-4 py-3 text-left font-medium text-text-secondary">
+                  Nume furnizor
+                </th>
+                <th className="px-4 py-3 text-center font-medium text-text-secondary">
+                  Nr. facturi
+                </th>
+                <th className="px-4 py-3 text-right font-medium text-text-secondary">
+                  Total cheltuieli
+                </th>
                 <th className="px-4 py-3 text-right font-medium text-text-secondary">Actiuni</th>
               </tr>
             </thead>
@@ -286,14 +277,12 @@ export default function SuppliersPage() {
           {deleteTarget && deleteTarget._count.invoices > 0 && (
             <div className="rounded-lg border border-warning bg-warning/10 p-3">
               <p className="text-sm text-warning">
-                Atentie: Furnizorul are {deleteTarget._count.invoices} facturi asociate.
-                Sterge mai intai facturile.
+                Atentie: Furnizorul are {deleteTarget._count.invoices} facturi asociate. Sterge mai
+                intai facturile.
               </p>
             </div>
           )}
-          <p className="text-sm text-text-secondary">
-            Aceasta actiune nu poate fi anulata.
-          </p>
+          <p className="text-sm text-text-secondary">Aceasta actiune nu poate fi anulata.</p>
           <div className="flex justify-end gap-3">
             <Button variant="outline" onClick={() => setDeleteTarget(null)}>
               Anuleaza

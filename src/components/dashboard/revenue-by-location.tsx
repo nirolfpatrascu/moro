@@ -41,19 +41,19 @@ export function RevenueByLocation({
               <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
               <XAxis dataKey="location" tick={{ fontSize: 12 }} />
               <YAxis
-                tickFormatter={(v: number) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)}
+                tickFormatter={(v: number) => (v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v))}
                 tick={{ fontSize: 12 }}
               />
               <Tooltip
-                formatter={((value: any, name: any) => [
-                  `${value.toLocaleString("ro-RO")} RON`,
-                  name === "revenue" ? "Venituri" : "Cheltuieli",
-                ]) as any}
+                formatter={
+                  ((value: any, name: any) => [
+                    `${value.toLocaleString("ro-RO")} RON`,
+                    name === "revenue" ? "Venituri" : "Cheltuieli",
+                  ]) as any
+                }
               />
               <Legend
-                formatter={(value: string) =>
-                  value === "revenue" ? "Venituri" : "Cheltuieli"
-                }
+                formatter={(value: string) => (value === "revenue" ? "Venituri" : "Cheltuieli")}
               />
               <Bar dataKey="revenue" fill="#4CAF50" radius={[4, 4, 0, 0]} />
               <Bar dataKey="expenses" fill="#F44336" radius={[4, 4, 0, 0]} />

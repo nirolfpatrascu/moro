@@ -1,14 +1,7 @@
 "use client";
 
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { ChartSkeleton } from "./skeleton";
 
 interface DataPoint {
@@ -17,13 +10,7 @@ interface DataPoint {
   count: number;
 }
 
-export function TopSuppliers({
-  data,
-  loading,
-}: {
-  data: DataPoint[] | null;
-  loading: boolean;
-}) {
+export function TopSuppliers({ data, loading }: { data: DataPoint[] | null; loading: boolean }) {
   if (loading || !data) return <ChartSkeleton title="Top Furnizori" />;
 
   if (data.length === 0) {
@@ -56,20 +43,14 @@ export function TopSuppliers({
             >
               <XAxis
                 type="number"
-                tickFormatter={(v: number) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)}
+                tickFormatter={(v: number) => (v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v))}
                 tick={{ fontSize: 12 }}
               />
-              <YAxis
-                type="category"
-                dataKey="supplier"
-                width={120}
-                tick={{ fontSize: 11 }}
-              />
+              <YAxis type="category" dataKey="supplier" width={120} tick={{ fontSize: 11 }} />
               <Tooltip
-                formatter={((value: any) => [
-                  `${value.toLocaleString("ro-RO")} RON`,
-                  "Total",
-                ]) as any}
+                formatter={
+                  ((value: any) => [`${value.toLocaleString("ro-RO")} RON`, "Total"]) as any
+                }
               />
               <Bar dataKey="amount" fill="#6F4E37" radius={[0, 4, 4, 0]} />
             </BarChart>

@@ -4,10 +4,7 @@ export default function Loading() {
       {/* Stat cards skeleton */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div
-            key={i}
-            className="animate-pulse rounded-card border border-border bg-surface p-6"
-          >
+          <div key={i} className="animate-pulse rounded-card border border-border bg-surface p-6">
             <div className="mb-3 h-3 w-24 rounded bg-border" />
             <div className="mb-2 h-7 w-32 rounded bg-border" />
             <div className="h-3 w-16 rounded bg-border-light" />

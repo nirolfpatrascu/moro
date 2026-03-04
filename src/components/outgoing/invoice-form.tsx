@@ -52,12 +52,7 @@ const emptyForm: FormState = {
   notes: "",
 };
 
-export function OutgoingInvoiceFormModal({
-  open,
-  onOpenChange,
-  invoice,
-  onSuccess,
-}: Props) {
+export function OutgoingInvoiceFormModal({ open, onOpenChange, invoice, onSuccess }: Props) {
   const [form, setForm] = useState<FormState>(emptyForm);
   const [customers, setCustomers] = useState<{ id: string; name: string }[]>([]);
   const [loading, setLoading] = useState(false);
@@ -107,7 +102,7 @@ export function OutgoingInvoiceFormModal({
   }, [invoice, open]);
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>,
   ) => {
     const { name, value } = e.target;
     setForm((f) => ({ ...f, [name]: value }));
@@ -127,7 +122,10 @@ export function OutgoingInvoiceFormModal({
   };
 
   // Auto-calculate unpaid when paidAmount changes
-  const unpaidAmount = Math.max(0, (parseFloat(form.totalAmount) || 0) - (parseFloat(form.paidAmount) || 0));
+  const unpaidAmount = Math.max(
+    0,
+    (parseFloat(form.totalAmount) || 0) - (parseFloat(form.paidAmount) || 0),
+  );
 
   const validate = (): boolean => {
     const errs: Record<string, string> = {};
@@ -186,9 +184,7 @@ export function OutgoingInvoiceFormModal({
         notes: form.notes || null,
       };
 
-      const url = isEdit
-        ? `/api/outgoing-invoices/${invoice!.id}`
-        : "/api/outgoing-invoices";
+      const url = isEdit ? `/api/outgoing-invoices/${invoice!.id}` : "/api/outgoing-invoices";
       const method = isEdit ? "PUT" : "POST";
 
       const res = await fetch(url, {
@@ -240,9 +236,7 @@ export function OutgoingInvoiceFormModal({
 
           {/* Status */}
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-text-secondary">
-              Status
-            </label>
+            <label className="text-sm font-medium text-text-secondary">Status</label>
             <select
               name="status"
               value={form.status}
@@ -258,9 +252,7 @@ export function OutgoingInvoiceFormModal({
 
         {/* Customer with create shortcut */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-text-secondary">
-            Client *
-          </label>
+          <label className="text-sm font-medium text-text-secondary">Client *</label>
           {!showNewCustomer ? (
             <div className="flex gap-2">
               <select
@@ -329,9 +321,7 @@ export function OutgoingInvoiceFormModal({
               </Button>
             </div>
           )}
-          {errors.customerId && (
-            <p className="text-xs text-danger">{errors.customerId}</p>
-          )}
+          {errors.customerId && <p className="text-xs text-danger">{errors.customerId}</p>}
         </div>
 
         {/* Dates */}
@@ -391,9 +381,7 @@ export function OutgoingInvoiceFormModal({
             step="0.01"
           />
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-text-secondary">
-              Rest de plata
-            </label>
+            <label className="text-sm font-medium text-text-secondary">Rest de plata</label>
             <div className="flex h-10 items-center rounded-lg border border-border bg-background px-3 text-sm font-medium text-text">
               {unpaidAmount.toLocaleString("ro-RO")} RON
             </div>
@@ -402,9 +390,7 @@ export function OutgoingInvoiceFormModal({
 
         {/* Notes */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-text-secondary">
-            Observatii
-          </label>
+          <label className="text-sm font-medium text-text-secondary">Observatii</label>
           <textarea
             name="notes"
             value={form.notes}
@@ -416,11 +402,7 @@ export function OutgoingInvoiceFormModal({
 
         {/* Actions */}
         <div className="flex justify-end gap-3 border-t border-border pt-4">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-          >
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
             Anuleaza
           </Button>
           <Button type="submit" variant="primary" loading={loading}>

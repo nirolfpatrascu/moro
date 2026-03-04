@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
     if (!parsed.success) {
       return NextResponse.json(
         { error: "Date invalide", details: parsed.error.issues },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -49,9 +49,6 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("Import preview error:", error);
-    return NextResponse.json(
-      { error: "Eroare la previzualizare" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Eroare la previzualizare" }, { status: 500 });
   }
 }

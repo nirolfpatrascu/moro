@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma, serializeDecimal } from "@/lib/prisma";
-import { outgoingInvoiceCreateSchema, outgoingBulkStatusUpdateSchema } from "@/lib/validations/outgoing-invoice";
+import {
+  outgoingInvoiceCreateSchema,
+  outgoingBulkStatusUpdateSchema,
+} from "@/lib/validations/outgoing-invoice";
 import { parseDateFlexible } from "@/lib/excel";
 import { MONTHS_RO } from "@/lib/utils";
 import { VAT_MULTIPLIER } from "@/lib/constants";
@@ -52,21 +55,20 @@ export async function GET(request: NextRequest) {
       prisma.outgoingInvoice.count({ where }),
     ]);
 
-    return NextResponse.json(serializeDecimal({
-      data: invoices,
-      pagination: {
-        page,
-        pageSize,
-        total,
-        totalPages: Math.ceil(total / pageSize),
-      },
-    }));
+    return NextResponse.json(
+      serializeDecimal({
+        data: invoices,
+        pagination: {
+          page,
+          pageSize,
+          total,
+          totalPages: Math.ceil(total / pageSize),
+        },
+      }),
+    );
   } catch (error) {
     console.error("List outgoing invoices error:", error);
-    return NextResponse.json(
-      { error: "Eroare la incarcarea facturilor" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Eroare la incarcarea facturilor" }, { status: 500 });
   }
 }
 
@@ -85,16 +87,14 @@ export async function POST(request: NextRequest) {
     if (!parsed.success) {
       return NextResponse.json(
         { error: "Date invalide", details: parsed.error.issues },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     const data = parsed.data;
 
     // Parse issue date
-    const parsedIssueDate = data.issueDate
-      ? parseDateFlexible(data.issueDate)
-      : null;
+    const parsedIssueDate = data.issueDate ? parseDateFlexible(data.issueDate) : null;
 
     // Derive year/month if not provided
     const year =
@@ -108,8 +108,7 @@ export async function POST(request: NextRequest) {
     // Auto-calculate amounts
     const totalAmount = data.totalAmount || 0;
     const amountExVat = data.amountExVat || +(totalAmount / VAT_MULTIPLIER).toFixed(2);
-    const paidAmount =
-      data.paidAmount || (data.status === "PAID" ? totalAmount : 0);
+    const paidAmount = data.paidAmount || (data.status === "PAID" ? totalAmount : 0);
     const unpaidAmount = data.unpaidAmount ?? totalAmount - paidAmount;
 
     const invoice = await prisma.outgoingInvoice.create({
@@ -139,10 +138,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(serializeDecimal(invoice), { status: 201 });
   } catch (error) {
     console.error("Create outgoing invoice error:", error);
-    return NextResponse.json(
-      { error: "Eroare la crearea facturii" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Eroare la crearea facturii" }, { status: 500 });
   }
 }
 
@@ -161,7 +157,7 @@ export async function PATCH(request: NextRequest) {
     if (!parsed.success) {
       return NextResponse.json(
         { error: "Date invalide", details: parsed.error.issues },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -178,14 +174,24 @@ export async function PATCH(request: NextRequest) {
           where: { id: inv.id },
           data: {
             status,
-            paidAmount: status === "PAID" ? Number(inv.totalAmount) : status === "UNPAID" ? 0 : Number(inv.paidAmount),
-            unpaidAmount: status === "PAID" ? 0 : status === "UNPAID" ? Number(inv.totalAmount) : Number(inv.unpaidAmount),
+            paidAmount:
+              status === "PAID"
+                ? Number(inv.totalAmount)
+                : status === "UNPAID"
+                  ? 0
+                  : Number(inv.paidAmount),
+            unpaidAmount:
+              status === "PAID"
+                ? 0
+                : status === "UNPAID"
+                  ? Number(inv.totalAmount)
+                  : Number(inv.unpaidAmount),
             paymentYear: status === "PAID" ? now.getFullYear() : null,
             paymentMonth: status === "PAID" ? MONTHS_RO[now.getMonth()] : null,
             paymentDay: status === "PAID" ? now.getDate() : null,
           },
-        })
-      )
+        }),
+      ),
     );
 
     return NextResponse.json({
@@ -194,9 +200,6 @@ export async function PATCH(request: NextRequest) {
     });
   } catch (error) {
     console.error("Bulk status update error:", error);
-    return NextResponse.json(
-      { error: "Eroare la actualizarea in masa" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Eroare la actualizarea in masa" }, { status: 500 });
   }
 }

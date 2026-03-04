@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
     ) {
       return NextResponse.json(
         { error: "Format invalid. Acceptam doar fisiere .xlsx sau .xls" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -52,9 +52,6 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("Import upload error:", error);
-    return NextResponse.json(
-      { error: "Eroare la procesarea fisierului" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Eroare la procesarea fisierului" }, { status: 500 });
   }
 }

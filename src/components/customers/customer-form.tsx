@@ -95,11 +95,7 @@ export function CustomerFormModal({ open, onOpenChange, customer, onSuccess }: P
         />
 
         <div className="flex justify-end gap-3 border-t border-border pt-4">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-          >
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
             Anuleaza
           </Button>
           <Button type="submit" variant="primary" loading={loading}>

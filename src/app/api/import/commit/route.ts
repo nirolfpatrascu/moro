@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
     if (!parsed.success) {
       return NextResponse.json(
         { error: "Date invalide", details: parsed.error.issues },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -54,13 +54,11 @@ export async function POST(request: NextRequest) {
       locations.flatMap((l) => [
         [l.code.toUpperCase(), l.id],
         [l.name.toUpperCase(), l.id],
-      ])
+      ]),
     );
 
     const existingSuppliers = await prisma.supplier.findMany();
-    const supplierMap = new Map(
-      existingSuppliers.map((s) => [s.name.toUpperCase(), s.id])
-    );
+    const supplierMap = new Map(existingSuppliers.map((s) => [s.name.toUpperCase(), s.id]));
 
     // Check for existing invoice numbers to handle duplicates
     const existingInvoices = await prisma.incomingInvoice.findMany({
@@ -141,7 +139,9 @@ export async function POST(request: NextRequest) {
         }
 
         // Resolve location — fallback to first available location
-        const locationStr = String(row.location ?? "").trim().toUpperCase();
+        const locationStr = String(row.location ?? "")
+          .trim()
+          .toUpperCase();
         let locationId = locationMap.get(locationStr);
         if (!locationId) {
           for (const [key, id] of locationMap) {
@@ -182,15 +182,23 @@ export async function POST(request: NextRequest) {
         if (!year && parsedIssueDate) year = parsedIssueDate.getFullYear();
         if (!year) year = new Date().getFullYear();
 
-        let month = String(row.month ?? "").trim().toUpperCase();
+        let month = String(row.month ?? "")
+          .trim()
+          .toUpperCase();
         if (!month && parsedIssueDate) {
           month = MONTHS_RO[parsedIssueDate.getMonth()];
         }
         if (!month) month = "NA";
 
         // P&L fields — fallback to "NA"
-        const plCategory = String(row.plCategory ?? "").trim().toUpperCase() || "NA";
-        const category = String(row.category ?? "").trim().toUpperCase() || "NA";
+        const plCategory =
+          String(row.plCategory ?? "")
+            .trim()
+            .toUpperCase() || "NA";
+        const category =
+          String(row.category ?? "")
+            .trim()
+            .toUpperCase() || "NA";
         const subcategory = row.subcategory ? String(row.subcategory).trim() : "NA";
 
         // Amounts — calculate missing values from available ones
@@ -296,9 +304,6 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("Import commit error:", error);
-    return NextResponse.json(
-      { error: "Eroare la importul datelor" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Eroare la importul datelor" }, { status: 500 });
   }
 }

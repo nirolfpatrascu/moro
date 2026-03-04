@@ -24,7 +24,7 @@ export function StatCard({ title, value, subtitle, icon, trend, className }: Sta
           <span
             className={cn(
               "text-xs font-medium",
-              trend.value >= 0 ? "text-[#4CAF50]" : "text-[#F44336]"
+              trend.value >= 0 ? "text-[#4CAF50]" : "text-[#F44336]",
             )}
           >
             {trend.value >= 0 ? "+" : ""}

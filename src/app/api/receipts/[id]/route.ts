@@ -23,19 +23,13 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
     });
 
     if (!receipt) {
-      return NextResponse.json(
-        { error: "Incasarea nu a fost gasita" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Incasarea nu a fost gasita" }, { status: 404 });
     }
 
     return NextResponse.json(serializeDecimal(receipt));
   } catch (error) {
     console.error("Get receipt error:", error);
-    return NextResponse.json(
-      { error: "Eroare la incarcarea incasarii" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Eroare la incarcarea incasarii" }, { status: 500 });
   }
 }
 
@@ -54,16 +48,13 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     if (!parsed.success) {
       return NextResponse.json(
         { error: "Date invalide", details: parsed.error.issues },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     const existing = await prisma.receipt.findUnique({ where: { id } });
     if (!existing) {
-      return NextResponse.json(
-        { error: "Incasarea nu a fost gasita" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Incasarea nu a fost gasita" }, { status: 404 });
     }
 
     const data = parsed.data;
@@ -93,10 +84,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     return NextResponse.json(serializeDecimal(receipt));
   } catch (error) {
     console.error("Update receipt error:", error);
-    return NextResponse.json(
-      { error: "Eroare la actualizarea incasarii" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Eroare la actualizarea incasarii" }, { status: 500 });
   }
 }
 
@@ -112,19 +100,13 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
     const existing = await prisma.receipt.findUnique({ where: { id } });
 
     if (!existing) {
-      return NextResponse.json(
-        { error: "Incasarea nu a fost gasita" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Incasarea nu a fost gasita" }, { status: 404 });
     }
 
     await prisma.receipt.delete({ where: { id } });
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Delete receipt error:", error);
-    return NextResponse.json(
-      { error: "Eroare la stergerea incasarii" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Eroare la stergerea incasarii" }, { status: 500 });
   }
 }

@@ -5,12 +5,27 @@ import { StatCard, Card, CardHeader, CardTitle, CardContent } from "@/components
 import { StatCardSkeleton } from "@/components/dashboard/skeleton";
 import { DashboardFilters } from "@/components/dashboard/dashboard-filters";
 import { CogsCharts } from "@/components/dashboard/cogs-charts";
-import { MonthlySpreadsheet, type SpreadsheetRow } from "@/components/dashboard/monthly-spreadsheet";
+import {
+  MonthlySpreadsheet,
+  type SpreadsheetRow,
+} from "@/components/dashboard/monthly-spreadsheet";
 import { formatCurrency } from "@/lib/utils";
 import { BarChart3, TrendingUp, Percent, Calculator } from "lucide-react";
-
-const COGS_CATS = ["BAR", "BUCATARIE", "CONSUMABILE", "TRANSPORT", "LIVRARE", "DIVERSE"];
-const SHORT_MONTHS = ["IAN", "FEB", "MAR", "APR", "MAI", "IUN", "IUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+import { COGS_CATS } from "@/lib/constants";
+const SHORT_MONTHS = [
+  "IAN",
+  "FEB",
+  "MAR",
+  "APR",
+  "MAI",
+  "IUN",
+  "IUL",
+  "AUG",
+  "SEP",
+  "OCT",
+  "NOV",
+  "DEC",
+];
 
 function zeros(): number[] {
   return new Array(12).fill(0);
@@ -50,7 +65,12 @@ export default function CogsDashboardPage() {
     }
     r.push({ label: "Total COGS", values: data.totalCogs || zeros(), isSummary: true });
     r.push({ label: "Venituri referinta", values: data.revenue || zeros(), indent: 0 });
-    r.push({ label: "COGS % din Venituri", values: data.cogsPercent || zeros(), isHighlight: true, isPercent: true });
+    r.push({
+      label: "COGS % din Venituri",
+      values: data.cogsPercent || zeros(),
+      isHighlight: true,
+      isPercent: true,
+    });
 
     return r;
   };
@@ -60,9 +80,7 @@ export default function CogsDashboardPage() {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-semibold text-[#2D1B0E]">COGS</h2>
-          <p className="mt-0.5 text-xs text-[#9B8B7F]">
-            Cost of Goods Sold — {year}
-          </p>
+          <p className="mt-0.5 text-xs text-[#9B8B7F]">Cost of Goods Sold — {year}</p>
         </div>
         <DashboardFilters
           year={year}
@@ -112,17 +130,10 @@ export default function CogsDashboardPage() {
       </div>
 
       {/* Charts */}
-      <CogsCharts
-        categories={data?.categories || {}}
-        loading={loading}
-      />
+      <CogsCharts categories={data?.categories || {}} loading={loading} />
 
       {/* Spreadsheet */}
-      <MonthlySpreadsheet
-        title={`COGS Detaliat — ${year}`}
-        rows={buildRows()}
-        loading={loading}
-      />
+      <MonthlySpreadsheet title={`COGS Detaliat — ${year}`} rows={buildRows()} loading={loading} />
 
       {/* Top Suppliers Table */}
       {data?.topSuppliers && data.topSuppliers.length > 0 && (
@@ -137,27 +148,37 @@ export default function CogsDashboardPage() {
                   <tr className="border-b-2 border-border">
                     <th className="py-2 pr-4 text-left font-semibold text-text-muted">Furnizor</th>
                     {SHORT_MONTHS.map((m) => (
-                      <th key={m} className="px-2 py-2 text-right font-semibold text-text-muted whitespace-nowrap">
+                      <th
+                        key={m}
+                        className="px-2 py-2 text-right font-semibold text-text-muted whitespace-nowrap"
+                      >
                         {m}
                       </th>
                     ))}
-                    <th className="px-2 py-2 text-right font-bold text-text whitespace-nowrap">TOTAL</th>
+                    <th className="px-2 py-2 text-right font-bold text-text whitespace-nowrap">
+                      TOTAL
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
-                  {data.topSuppliers.map((s: { name: string; total: number; monthly: number[] }, i: number) => (
-                    <tr key={i} className="border-b border-border-light hover:bg-background/50">
-                      <td className="py-2 pr-4 font-medium whitespace-nowrap">{s.name}</td>
-                      {(s.monthly || zeros()).map((v: number, j: number) => (
-                        <td key={j} className="px-2 py-2 text-right tabular-nums whitespace-nowrap">
-                          {formatCurrency(v)}
+                  {data.topSuppliers.map(
+                    (s: { name: string; total: number; monthly: number[] }, i: number) => (
+                      <tr key={i} className="border-b border-border-light hover:bg-background/50">
+                        <td className="py-2 pr-4 font-medium whitespace-nowrap">{s.name}</td>
+                        {(s.monthly || zeros()).map((v: number, j: number) => (
+                          <td
+                            key={j}
+                            className="px-2 py-2 text-right tabular-nums whitespace-nowrap"
+                          >
+                            {formatCurrency(v)}
+                          </td>
+                        ))}
+                        <td className="px-2 py-2 text-right font-bold tabular-nums whitespace-nowrap">
+                          {formatCurrency(s.total)}
                         </td>
-                      ))}
-                      <td className="px-2 py-2 text-right font-bold tabular-nums whitespace-nowrap">
-                        {formatCurrency(s.total)}
-                      </td>
-                    </tr>
-                  ))}
+                      </tr>
+                    ),
+                  )}
                 </tbody>
               </table>
             </div>

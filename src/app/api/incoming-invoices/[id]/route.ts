@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma, serializeDecimal } from "@/lib/prisma";
-import { incomingInvoiceUpdateSchema, invoiceStatusUpdateSchema } from "@/lib/validations/incoming-invoice";
+import {
+  incomingInvoiceUpdateSchema,
+  invoiceStatusUpdateSchema,
+} from "@/lib/validations/incoming-invoice";
 import { parseDateFlexible } from "@/lib/excel";
 import { MONTHS_RO } from "@/lib/utils";
 import { VAT_MULTIPLIER } from "@/lib/constants";
@@ -26,19 +29,13 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
     });
 
     if (!invoice) {
-      return NextResponse.json(
-        { error: "Factura nu a fost gasita" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Factura nu a fost gasita" }, { status: 404 });
     }
 
     return NextResponse.json(serializeDecimal(invoice));
   } catch (error) {
     console.error("Get incoming invoice error:", error);
-    return NextResponse.json(
-      { error: "Eroare la incarcarea facturii" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Eroare la incarcarea facturii" }, { status: 500 });
   }
 }
 
@@ -57,7 +54,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     if (!parsed.success) {
       return NextResponse.json(
         { error: "Date invalide", details: parsed.error.issues },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -66,10 +63,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     });
 
     if (!existing) {
-      return NextResponse.json(
-        { error: "Factura nu a fost gasita" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Factura nu a fost gasita" }, { status: 404 });
     }
 
     const data = parsed.data;
@@ -79,13 +73,13 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       if (data.paidAmount > data.totalAmount) {
         return NextResponse.json(
           { error: "Suma achitata nu poate depasi suma totala" },
-          { status: 400 }
+          { status: 400 },
         );
       }
     } else if (data.paidAmount !== undefined && data.paidAmount > Number(existing.totalAmount)) {
       return NextResponse.json(
         { error: "Suma achitata nu poate depasi suma totala" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -95,7 +89,8 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     if (data.invoiceNumber !== undefined) updateData.invoiceNumber = data.invoiceNumber;
     if (data.supplierId !== undefined) updateData.supplierId = data.supplierId;
     if (data.notes !== undefined) updateData.notes = data.notes || null;
-    if (data.itemDescription !== undefined) updateData.itemDescription = data.itemDescription || null;
+    if (data.itemDescription !== undefined)
+      updateData.itemDescription = data.itemDescription || null;
     if (data.qty !== undefined) updateData.qty = data.qty;
     if (data.unitPrice !== undefined) updateData.unitPrice = data.unitPrice;
     if (data.status !== undefined) updateData.status = data.status;
@@ -123,13 +118,15 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     if (data.totalAmount !== undefined) {
       updateData.totalAmount = data.totalAmount;
       updateData.amountExVat = data.amountExVat || +(data.totalAmount / VAT_MULTIPLIER).toFixed(2);
-      updateData.vatAmount = data.vatAmount || +(data.totalAmount - (updateData.amountExVat as number)).toFixed(2);
+      updateData.vatAmount =
+        data.vatAmount || +(data.totalAmount - (updateData.amountExVat as number)).toFixed(2);
     }
 
     if (data.paidAmount !== undefined || data.status !== undefined) {
       const total = Number(data.totalAmount ?? existing.totalAmount) || 0;
       const status = data.status ?? existing.status;
-      const paidAmount = data.paidAmount ?? (status === "PAID" ? total : Number(existing.paidAmount));
+      const paidAmount =
+        data.paidAmount ?? (status === "PAID" ? total : Number(existing.paidAmount));
       updateData.paidAmount = paidAmount;
       updateData.remainingAmount = data.remainingAmount ?? total - Number(paidAmount);
     }
@@ -146,10 +143,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     return NextResponse.json(serializeDecimal(invoice));
   } catch (error) {
     console.error("Update incoming invoice error:", error);
-    return NextResponse.json(
-      { error: "Eroare la actualizarea facturii" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Eroare la actualizarea facturii" }, { status: 500 });
   }
 }
 
@@ -169,7 +163,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     if (!parsed.success) {
       return NextResponse.json(
         { error: "Date invalide", details: parsed.error.issues },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -178,17 +172,19 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     });
 
     if (!existing) {
-      return NextResponse.json(
-        { error: "Factura nu a fost gasita" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Factura nu a fost gasita" }, { status: 404 });
     }
 
     const { status, paidAmount, paymentYear, paymentMonth, paymentDay } = parsed.data;
 
     const now = new Date();
     const resolvedPaidAmount =
-      paidAmount ?? (status === "PAID" ? Number(existing.totalAmount) : status === "UNPAID" ? 0 : Number(existing.paidAmount));
+      paidAmount ??
+      (status === "PAID"
+        ? Number(existing.totalAmount)
+        : status === "UNPAID"
+          ? 0
+          : Number(existing.paidAmount));
     const remainingAmount = Number(existing.totalAmount) - Number(resolvedPaidAmount);
 
     const invoice = await prisma.incomingInvoice.update({
@@ -198,7 +194,8 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         paidAmount: resolvedPaidAmount,
         remainingAmount,
         paymentYear: paymentYear ?? (status === "PAID" ? now.getFullYear() : existing.paymentYear),
-        paymentMonth: paymentMonth ?? (status === "PAID" ? MONTHS_RO[now.getMonth()] : existing.paymentMonth),
+        paymentMonth:
+          paymentMonth ?? (status === "PAID" ? MONTHS_RO[now.getMonth()] : existing.paymentMonth),
         paymentDay: paymentDay ?? (status === "PAID" ? now.getDate() : existing.paymentDay),
       },
       include: {
@@ -210,10 +207,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     return NextResponse.json(serializeDecimal(invoice));
   } catch (error) {
     console.error("Patch incoming invoice status error:", error);
-    return NextResponse.json(
-      { error: "Eroare la actualizarea statusului" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Eroare la actualizarea statusului" }, { status: 500 });
   }
 }
 
@@ -231,10 +225,7 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
     });
 
     if (!existing) {
-      return NextResponse.json(
-        { error: "Factura nu a fost gasita" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Factura nu a fost gasita" }, { status: 404 });
     }
 
     await prisma.incomingInvoice.delete({ where: { id } });
@@ -242,9 +233,6 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Delete incoming invoice error:", error);
-    return NextResponse.json(
-      { error: "Eroare la stergerea facturii" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Eroare la stergerea facturii" }, { status: 500 });
   }
 }

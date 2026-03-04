@@ -1,13 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import {
-  Card,
-  CardContent,
-  Button,
-  Badge,
-  Modal,
-} from "@/components/ui";
+import { Card, CardContent, Button, Badge, Modal } from "@/components/ui";
 import { useToast } from "@/components/ui/toast";
 import {
   Plus,
@@ -72,10 +66,15 @@ type SortField = "date" | "totalSales";
 export default function IncomePage() {
   const [records, setRecords] = useState<DailyIncomeRow[]>([]);
   const [pagination, setPagination] = useState<Pagination>({
-    page: 1, pageSize: 20, total: 0, totalPages: 0,
+    page: 1,
+    pageSize: 20,
+    total: 0,
+    totalPages: 0,
   });
   const [summary, setSummary] = useState<Summary>({
-    totalRevenue: 0, totalRevenueExVat: 0, totalDays: 0,
+    totalRevenue: 0,
+    totalRevenueExVat: 0,
+    totalDays: 0,
   });
   const [loading, setLoading] = useState(true);
   const [filterLocation, setFilterLocation] = useState("");
@@ -129,7 +128,11 @@ export default function IncomePage() {
         setSummary(data.summary);
       }
     } catch {
-      toast({ title: "Eroare", description: "Nu s-au putut incarca incasarile zilnice", variant: "danger" });
+      toast({
+        title: "Eroare",
+        description: "Nu s-au putut incarca incasarile zilnice",
+        variant: "danger",
+      });
     } finally {
       setLoading(false);
     }
@@ -265,25 +268,36 @@ export default function IncomePage() {
             <div className="mt-3 flex flex-wrap items-center gap-3 border-t border-border pt-3">
               <select
                 value={filterLocation}
-                onChange={(e) => { setFilterLocation(e.target.value); setPagination((p) => ({ ...p, page: 1 })); }}
+                onChange={(e) => {
+                  setFilterLocation(e.target.value);
+                  setPagination((p) => ({ ...p, page: 1 }));
+                }}
                 className="h-9 rounded-lg border border-border bg-surface px-3 text-sm"
               >
                 <option value="">Toate locatiile</option>
                 {locations.map((l) => (
-                  <option key={l.id} value={l.id}>{l.name}</option>
+                  <option key={l.id} value={l.id}>
+                    {l.name}
+                  </option>
                 ))}
               </select>
               <input
                 type="date"
                 value={dateFrom}
-                onChange={(e) => { setDateFrom(e.target.value); setPagination((p) => ({ ...p, page: 1 })); }}
+                onChange={(e) => {
+                  setDateFrom(e.target.value);
+                  setPagination((p) => ({ ...p, page: 1 }));
+                }}
                 className="h-9 rounded-lg border border-border bg-surface px-3 text-sm"
                 placeholder="De la"
               />
               <input
                 type="date"
                 value={dateTo}
-                onChange={(e) => { setDateTo(e.target.value); setPagination((p) => ({ ...p, page: 1 })); }}
+                onChange={(e) => {
+                  setDateTo(e.target.value);
+                  setPagination((p) => ({ ...p, page: 1 }));
+                }}
                 className="h-9 rounded-lg border border-border bg-surface px-3 text-sm"
                 placeholder="Pana la"
               />
@@ -389,9 +403,7 @@ export default function IncomePage() {
                     <td className="px-4 py-3 text-right text-text-secondary">
                       {formatCurrency(r.salesExVat)}
                     </td>
-                    <td className="px-4 py-3 text-center text-text-secondary">
-                      {r.receiptCount}
-                    </td>
+                    <td className="px-4 py-3 text-center text-text-secondary">{r.receiptCount}</td>
                     <td className="px-4 py-3 text-right text-text-secondary">
                       {formatCurrency(r.barSales)}
                     </td>
@@ -417,7 +429,10 @@ export default function IncomePage() {
                           <Eye className="h-4 w-4" />
                         </button>
                         <button
-                          onClick={() => { setEditingRecord(r); setFormOpen(true); }}
+                          onClick={() => {
+                            setEditingRecord(r);
+                            setFormOpen(true);
+                          }}
                           className="rounded p-1.5 text-text-muted hover:bg-surface-hover hover:text-primary"
                           title="Editeaza"
                         >
@@ -460,7 +475,9 @@ export default function IncomePage() {
               </span>
               <button
                 className="rounded p-1 text-text-muted hover:bg-surface-hover disabled:opacity-40"
-                onClick={() => setPagination((p) => ({ ...p, page: Math.min(p.totalPages, p.page + 1) }))}
+                onClick={() =>
+                  setPagination((p) => ({ ...p, page: Math.min(p.totalPages, p.page + 1) }))
+                }
                 disabled={pagination.page >= pagination.totalPages}
               >
                 <ChevronRight className="h-4 w-4" />
@@ -502,9 +519,7 @@ export default function IncomePage() {
         description={`Esti sigur ca vrei sa stergi inregistrarea din ${deleteTarget ? new Date(deleteTarget.date).toLocaleDateString("ro-RO") : ""} (${deleteTarget?.location?.name || ""}) — ${deleteTarget ? formatCurrency(deleteTarget.totalSales) : ""}?`}
       >
         <div className="space-y-4">
-          <p className="text-sm text-text-secondary">
-            Aceasta actiune nu poate fi anulata.
-          </p>
+          <p className="text-sm text-text-secondary">Aceasta actiune nu poate fi anulata.</p>
           <div className="flex justify-end gap-3">
             <Button variant="outline" onClick={() => setDeleteTarget(null)}>
               Anuleaza

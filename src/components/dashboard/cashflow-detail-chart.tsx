@@ -15,7 +15,20 @@ import {
 } from "recharts";
 import { ChartSkeleton } from "./skeleton";
 
-const SHORT_MONTHS = ["IAN", "FEB", "MAR", "APR", "MAI", "IUN", "IUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+const SHORT_MONTHS = [
+  "IAN",
+  "FEB",
+  "MAR",
+  "APR",
+  "MAI",
+  "IUN",
+  "IUL",
+  "AUG",
+  "SEP",
+  "OCT",
+  "NOV",
+  "DEC",
+];
 
 interface CashFlowDetailChartProps {
   inflows: number[];
@@ -24,7 +37,12 @@ interface CashFlowDetailChartProps {
   loading: boolean;
 }
 
-export function CashFlowDetailChart({ inflows, outflows, netCashFlow, loading }: CashFlowDetailChartProps) {
+export function CashFlowDetailChart({
+  inflows,
+  outflows,
+  netCashFlow,
+  loading,
+}: CashFlowDetailChartProps) {
   if (loading) return <ChartSkeleton title="Cash Flow Detaliat" height="h-72" />;
 
   const data = SHORT_MONTHS.map((m, i) => ({
@@ -60,18 +78,32 @@ export function CashFlowDetailChart({ inflows, outflows, netCashFlow, loading }:
               <XAxis dataKey="month" tick={{ fontSize: 12 }} />
               <YAxis tickFormatter={formatValue} tick={{ fontSize: 12 }} />
               <Tooltip
-                formatter={((value: number, name: string) => [
-                  `${value.toLocaleString("ro-RO")} RON`,
-                  name === "intrari" ? "Intrari" : name === "iesiri" ? "Iesiri" : "Flux Net",
-                ]) as any}
+                formatter={
+                  ((value: number, name: string) => [
+                    `${value.toLocaleString("ro-RO")} RON`,
+                    name === "intrari" ? "Intrari" : name === "iesiri" ? "Iesiri" : "Flux Net",
+                  ]) as any
+                }
               />
               <Legend
                 formatter={(value: string) =>
                   value === "intrari" ? "Intrari" : value === "iesiri" ? "Iesiri" : "Flux Net"
                 }
               />
-              <Area type="monotone" dataKey="intrari" stroke="#4CAF50" strokeWidth={2} fill="url(#cfInGrad)" />
-              <Area type="monotone" dataKey="iesiri" stroke="#F44336" strokeWidth={2} fill="url(#cfOutGrad)" />
+              <Area
+                type="monotone"
+                dataKey="intrari"
+                stroke="#4CAF50"
+                strokeWidth={2}
+                fill="url(#cfInGrad)"
+              />
+              <Area
+                type="monotone"
+                dataKey="iesiri"
+                stroke="#F44336"
+                strokeWidth={2}
+                fill="url(#cfOutGrad)"
+              />
               <Line type="monotone" dataKey="net" stroke="#6F4E37" strokeWidth={2} dot={{ r: 3 }} />
             </ComposedChart>
           </ResponsiveContainer>

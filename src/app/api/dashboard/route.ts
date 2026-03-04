@@ -2,13 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma, serializeDecimal } from "@/lib/prisma";
 import { MONTHS_RO, monthIndex } from "@/lib/utils";
 import { requireAuth } from "@/lib/auth-guard";
-
-// ── Category constants for P&L breakdown ──────────────────
-const COGS_CATS = ["BAR", "BUCATARIE", "CONSUMABILE", "TRANSPORT", "LIVRARE", "DIVERSE"];
-const PEOPLE_CATS = ["SALARII", "COLABORATORI", "TAXE SALARIU", "TICHETE MASA", "BONUSURI", "UNIFORME", "TRAINING"];
-const OPEX_CATS = ["LICENTE", "CONSULTING", "CONTABILITATE", "AUTORIZATII", "MARKETING", "DIVERSE", "INVENTAR OBIECTE"];
-const COSTFIX_CATS = ["CHIRII", "UTILITATI", "BANCA", "DIVERSE"];
-const TAXE_CATS = ["IMPOZIT VENIT", "TVA", "ALTE TAXE"];
+import { COGS_CATS, PEOPLE_CATS, OPEX_CATS, COSTFIX_CATS, TAXE_CATS } from "@/lib/constants";
 
 /**
  * GET /api/dashboard?type=summary|cashflow|by-location|by-category|aging|recent|alerts
@@ -61,17 +55,14 @@ export async function GET(request: NextRequest) {
     }
   } catch (error) {
     console.error("Dashboard API error:", error);
-    return NextResponse.json(
-      { error: "Eroare la incarcarea dashboard-ului" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Eroare la incarcarea dashboard-ului" }, { status: 500 });
   }
 }
 
 function getDateRange(
   period: string,
   now: Date,
-  params: URLSearchParams
+  params: URLSearchParams,
 ): { from: Date; to: Date } {
   const to = new Date(now);
   to.setHours(23, 59, 59, 999);
@@ -159,9 +150,8 @@ async function getSummary(from: Date, to: Date, locationId?: string) {
   const revenue = Number(revenueAgg._sum.totalSales) || 0;
   const prevRevenue = Number(prevRevenueAgg._sum.totalSales) || 0;
   const expenses = Number(expensesAgg._sum.totalAmount) || 0;
-  const revenueTrend = prevRevenue > 0
-    ? Math.round(((revenue - prevRevenue) / prevRevenue) * 100)
-    : 0;
+  const revenueTrend =
+    prevRevenue > 0 ? Math.round(((revenue - prevRevenue) / prevRevenue) * 100) : 0;
 
   return {
     revenue,
@@ -239,7 +229,7 @@ async function getByLocation(from: Date, to: Date) {
         revenue: Number(revenue._sum.totalSales) || 0,
         expenses: Number(expenses._sum.totalAmount) || 0,
       };
-    })
+    }),
   );
 
   return result;
@@ -515,15 +505,18 @@ async function getPnl(year: number, locationId?: string) {
 
   // Computed metrics
   const grossProfit = income.map((v, i) => v - cogs.total[i]);
-  const operatingProfit = grossProfit.map((v, i) => v - people.total[i] - opex.total[i] - costfix.total[i]);
+  const operatingProfit = grossProfit.map(
+    (v, i) => v - people.total[i] - opex.total[i] - costfix.total[i],
+  );
   const netProfit = operatingProfit.map((v, i) => v - taxe.total[i]);
-  const grossMargin = income.map((v, i) => (v > 0 ? ((grossProfit[i] / v) * 100) : 0));
-  const operatingMargin = income.map((v, i) => (v > 0 ? ((operatingProfit[i] / v) * 100) : 0));
-  const netMargin = income.map((v, i) => (v > 0 ? ((netProfit[i] / v) * 100) : 0));
+  const grossMargin = income.map((v, i) => (v > 0 ? (grossProfit[i] / v) * 100 : 0));
+  const operatingMargin = income.map((v, i) => (v > 0 ? (operatingProfit[i] / v) * 100 : 0));
+  const netMargin = income.map((v, i) => (v > 0 ? (netProfit[i] / v) * 100 : 0));
 
   const sum = (arr: number[]) => arr.reduce((a, b) => a + b, 0);
   const totalIncome = sum(income);
-  const totalExpenses = sum(cogs.total) + sum(people.total) + sum(opex.total) + sum(costfix.total) + sum(taxe.total);
+  const totalExpenses =
+    sum(cogs.total) + sum(people.total) + sum(opex.total) + sum(costfix.total) + sum(taxe.total);
 
   return {
     income,
@@ -587,7 +580,9 @@ async function getCashFlowDetail(year: number, locationId?: string) {
     }
   }
 
-  const totalInflows = zeros().map((_, i) => cashSales[i] + cardSales[i] + transferSales[i] + invoiceCollections[i]);
+  const totalInflows = zeros().map(
+    (_, i) => cashSales[i] + cardSales[i] + transferSales[i] + invoiceCollections[i],
+  );
 
   // Outflows: incoming invoices paid (cash basis) grouped by plCategory
   const paidInvoices = await prisma.incomingInvoice.findMany({
@@ -609,15 +604,27 @@ async function getCashFlowDetail(year: number, locationId?: string) {
     const m = monthIndex(inv.paymentMonth);
     if (m < 0) continue;
     switch (inv.plCategory) {
-      case "COGS": outCogs[m] += Number(inv.paidAmount); break;
-      case "PEOPLE": outPeople[m] += Number(inv.paidAmount); break;
-      case "OPEX": outOpex[m] += Number(inv.paidAmount); break;
-      case "COSTFIX": outCostfix[m] += Number(inv.paidAmount); break;
-      case "TAXE": outTaxe[m] += Number(inv.paidAmount); break;
+      case "COGS":
+        outCogs[m] += Number(inv.paidAmount);
+        break;
+      case "PEOPLE":
+        outPeople[m] += Number(inv.paidAmount);
+        break;
+      case "OPEX":
+        outOpex[m] += Number(inv.paidAmount);
+        break;
+      case "COSTFIX":
+        outCostfix[m] += Number(inv.paidAmount);
+        break;
+      case "TAXE":
+        outTaxe[m] += Number(inv.paidAmount);
+        break;
     }
   }
 
-  const totalOutflows = zeros().map((_, i) => outCogs[i] + outPeople[i] + outOpex[i] + outCostfix[i] + outTaxe[i]);
+  const totalOutflows = zeros().map(
+    (_, i) => outCogs[i] + outPeople[i] + outOpex[i] + outCostfix[i] + outTaxe[i],
+  );
   const netCashFlow = totalInflows.map((v, i) => v - totalOutflows[i]);
   const cumulativeCashFlow = zeros();
   netCashFlow.forEach((v, i) => {
@@ -628,7 +635,14 @@ async function getCashFlowDetail(year: number, locationId?: string) {
 
   return {
     inflows: { cashSales, cardSales, transferSales, invoiceCollections, totalInflows },
-    outflows: { cogs: outCogs, people: outPeople, opex: outOpex, costfix: outCostfix, taxe: outTaxe, totalOutflows },
+    outflows: {
+      cogs: outCogs,
+      people: outPeople,
+      opex: outOpex,
+      costfix: outCostfix,
+      taxe: outTaxe,
+      totalOutflows,
+    },
     netCashFlow,
     cumulativeCashFlow,
     totals: {

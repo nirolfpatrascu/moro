@@ -119,9 +119,7 @@ export default function SettingsPage() {
             </Button>
           </div>
 
-          {error && (
-            <p className="mb-3 text-sm text-[#F44336]">{error}</p>
-          )}
+          {error && <p className="mb-3 text-sm text-[#F44336]">{error}</p>}
 
           {/* List */}
           {loading ? (
@@ -141,9 +139,7 @@ export default function SettingsPage() {
                     <Mail className="h-4 w-4 text-[#9B8B7F]" />
                     <span className="text-sm text-[#2D1B0E]">{e.email}</span>
                     {e.addedBy && (
-                      <span className="text-xs text-[#9B8B7F]">
-                        (adaugat de {e.addedBy})
-                      </span>
+                      <span className="text-xs text-[#9B8B7F]">(adaugat de {e.addedBy})</span>
                     )}
                   </div>
                   <button
@@ -156,7 +152,8 @@ export default function SettingsPage() {
               ))}
               {emails.length === 0 && (
                 <p className="py-4 text-center text-sm text-[#9B8B7F]">
-                  Nu exista emailuri adaugate. Emailurile din variabila APPROVED_EMAILS sunt automat acceptate.
+                  Nu exista emailuri adaugate. Emailurile din variabila APPROVED_EMAILS sunt automat
+                  acceptate.
                 </p>
               )}
             </div>
