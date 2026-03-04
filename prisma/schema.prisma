@@ -43,28 +43,28 @@ model DailyIncome {
   year            Int
 
   // Sales totals
-  totalSales      Float    @default(0)  // MAGNOLIA / ORIZONT column (with TVA)
-  tva             Float    @default(0)  // TVA
-  salesExVat      Float    @default(0)  // FARA TVA
+  totalSales      Decimal    @default(0)  // MAGNOLIA / ORIZONT column (with TVA)
+  tva             Decimal    @default(0)  // TVA
+  salesExVat      Decimal    @default(0)  // FARA TVA
   receiptCount    Int      @default(0)  // Nr. bonuri
-  avgReceipt      Float    @default(0)  // Cec mediu
+  avgReceipt      Decimal    @default(0)  // Cec mediu
 
   // Department breakdown
-  barSales        Float    @default(0)  // BAR
+  barSales        Decimal    @default(0)  // BAR
   barProductCount Int      @default(0)  // Nr Produse BAR
-  kitchenSales    Float    @default(0)  // BUCATARIE
+  kitchenSales    Decimal    @default(0)  // BUCATARIE
   kitchenProductCount Int  @default(0)  // Nr Produse BUCATARIE
 
   // Payment methods
-  cashAmount      Float    @default(0)  // CASH
-  cardAmount      Float    @default(0)  // CARD
-  transferAmount  Float    @default(0)  // VIRAMENT
-  accountAmount   Float    @default(0)  // CONT
-  deliveryAmount  Float    @default(0)  // LIVRATOR
+  cashAmount      Decimal    @default(0)  // CASH
+  cardAmount      Decimal    @default(0)  // CARD
+  transferAmount  Decimal    @default(0)  // VIRAMENT
+  accountAmount   Decimal    @default(0)  // CONT
+  deliveryAmount  Decimal    @default(0)  // LIVRATOR
 
   // Tips
-  tipsFiscal      Float    @default(0)  // TIPS FISCAL
-  tipsTotal       Float    @default(0)  // TIPS
+  tipsFiscal      Decimal    @default(0)  // TIPS FISCAL
+  tipsTotal       Decimal    @default(0)  // TIPS
 
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -86,7 +86,7 @@ model Receipt {
   type            String   @default("SALE")        // SALE, REFUND, EXPENSE
   description     String?
   category        String?                           // BAR, BUCATARIE, DIVERSE
-  amount          Float    @default(0)
+  amount          Decimal    @default(0)
   paymentMethod   String   @default("CASH")        // CASH, CARD, TRANSFER
   receiptNumber   String?
   notes           String?
@@ -128,17 +128,17 @@ model IncomingInvoice {
   issueDateParsed DateTime?                       // Parsed date when possible
   dueDate         DateTime?                       // Scadenta
   itemDescription String?                         // Descriere articol (from Excel)
-  qty             Float     @default(0)           // Cantitate
-  unitPrice       Float     @default(0)           // Pret unitar
-  amountExVat     Float     @default(0)           // Suma fara TVA
-  vatAmount       Float     @default(0)           // Val TVA
-  totalAmount     Float     @default(0)           // Suma de plata
+  qty             Decimal     @default(0)           // Cantitate
+  unitPrice       Decimal     @default(0)           // Pret unitar
+  amountExVat     Decimal     @default(0)           // Suma fara TVA
+  vatAmount       Decimal     @default(0)           // Val TVA
+  totalAmount     Decimal     @default(0)           // Suma de plata
   status          String    @default("UNPAID")    // PAID, UNPAID, PARTIAL
-  paidAmount      Float     @default(0)           // Achitati
+  paidAmount      Decimal     @default(0)           // Achitati
   paymentYear     Int?                            // An Plata
   paymentMonth    String?                         // Luna Plata
   paymentDay      Int?                            // Data (day of month)
-  remainingAmount Float     @default(0)           // De plata
+  remainingAmount Decimal     @default(0)           // De plata
   notes           String?                         // Obs
 
   createdAt       DateTime  @default(now())
@@ -175,13 +175,13 @@ model OutgoingInvoice {
   customerId      String                          // FK to Customer
   issueDate       DateTime?                       // Data Emitere
   dueDate         DateTime?                       // Scadenta
-  amountExVat     Float     @default(0)           // Suma fara TVA
-  totalAmount     Float     @default(0)           // Suma de plata
-  paidAmount      Float     @default(0)           // ACHITAT
+  amountExVat     Decimal     @default(0)           // Suma fara TVA
+  totalAmount     Decimal     @default(0)           // Suma de plata
+  paidAmount      Decimal     @default(0)           // ACHITAT
   paymentYear     Int?                            // An Plata
   paymentMonth    String?                         // Luna Plata
   paymentDay      Int?                            // ZI
-  unpaidAmount    Float     @default(0)           // NEACHITAT
+  unpaidAmount    Decimal     @default(0)           // NEACHITAT
   status          String    @default("UNPAID")    // PAID, UNPAID, PARTIAL
   notes           String?
 
@@ -206,80 +206,80 @@ model MonthlyPnL {
   month           Int    // 1-12
 
   // A. INCOME
-  totalIncome       Float @default(0)
+  totalIncome       Decimal @default(0)
   workingDays       Int   @default(0)
   receiptCount      Int   @default(0)
-  unitSales         Float @default(0)
-  avgReceipt        Float @default(0)
-  avgDailySales     Float @default(0)
-  barSales          Float @default(0)
+  unitSales         Decimal @default(0)
+  avgReceipt        Decimal @default(0)
+  avgDailySales     Decimal @default(0)
+  barSales          Decimal @default(0)
   barProductCount   Int   @default(0)
-  kitchenSales      Float @default(0)
+  kitchenSales      Decimal @default(0)
   kitchenProductCount Int @default(0)
-  deliverySales     Float @default(0)
-  invoicedSales     Float @default(0)
+  deliverySales     Decimal @default(0)
+  invoicedSales     Decimal @default(0)
 
   // B. COGS
-  totalCogs         Float @default(0)
-  cogsPercent       Float @default(0)
-  costGoods         Float @default(0)
-  costRawMaterials  Float @default(0)
-  costTransport     Float @default(0)
-  costPackaging     Float @default(0)
-  costDeliveryComm  Float @default(0)
-  costLosses        Float @default(0)
-  costProtocol      Float @default(0)
+  totalCogs         Decimal @default(0)
+  cogsPercent       Decimal @default(0)
+  costGoods         Decimal @default(0)
+  costRawMaterials  Decimal @default(0)
+  costTransport     Decimal @default(0)
+  costPackaging     Decimal @default(0)
+  costDeliveryComm  Decimal @default(0)
+  costLosses        Decimal @default(0)
+  costProtocol      Decimal @default(0)
 
   // C. PEOPLE
-  totalPeople       Float @default(0)
-  peoplePercent     Float @default(0)
-  netFront          Float @default(0)
-  collaborators     Float @default(0)
-  salaryTaxes       Float @default(0)
-  mealTickets       Float @default(0)
-  salaryDiff        Float @default(0)
-  freshService      Float @default(0)
-  bonuses           Float @default(0)
-  uniforms          Float @default(0)
-  training          Float @default(0)
-  recruitment       Float @default(0)
-  medicalWork       Float @default(0)
-  ssm               Float @default(0)
-  hygieneCourses    Float @default(0)
+  totalPeople       Decimal @default(0)
+  peoplePercent     Decimal @default(0)
+  netFront          Decimal @default(0)
+  collaborators     Decimal @default(0)
+  salaryTaxes       Decimal @default(0)
+  mealTickets       Decimal @default(0)
+  salaryDiff        Decimal @default(0)
+  freshService      Decimal @default(0)
+  bonuses           Decimal @default(0)
+  uniforms          Decimal @default(0)
+  training          Decimal @default(0)
+  recruitment       Decimal @default(0)
+  medicalWork       Decimal @default(0)
+  ssm               Decimal @default(0)
+  hygieneCourses    Decimal @default(0)
 
   // D. OPEX
-  totalOpex         Float @default(0)
-  opexPercent       Float @default(0)
-  licenses          Float @default(0)
-  consulting        Float @default(0)
-  accounting        Float @default(0)
-  authorizations    Float @default(0)
-  marketing         Float @default(0)
-  diverseOpex       Float @default(0)
-  objectInventory   Float @default(0)
+  totalOpex         Decimal @default(0)
+  opexPercent       Decimal @default(0)
+  licenses          Decimal @default(0)
+  consulting        Decimal @default(0)
+  accounting        Decimal @default(0)
+  authorizations    Decimal @default(0)
+  marketing         Decimal @default(0)
+  diverseOpex       Decimal @default(0)
+  objectInventory   Decimal @default(0)
 
   // E. FIXED COSTS
-  totalFixedCosts   Float @default(0)
-  fixedCostsPercent Float @default(0)
-  rent              Float @default(0)
-  utilities         Float @default(0)
-  bankFees          Float @default(0)
-  otherFixed        Float @default(0)
+  totalFixedCosts   Decimal @default(0)
+  fixedCostsPercent Decimal @default(0)
+  rent              Decimal @default(0)
+  utilities         Decimal @default(0)
+  bankFees          Decimal @default(0)
+  otherFixed        Decimal @default(0)
 
   // F. TAXES
-  totalTaxes        Float @default(0)
-  incomeTax         Float @default(0)
-  vatPayable        Float @default(0)
-  otherTaxes        Float @default(0)
+  totalTaxes        Decimal @default(0)
+  incomeTax         Decimal @default(0)
+  vatPayable        Decimal @default(0)
+  otherTaxes        Decimal @default(0)
 
   // G. FINANCING
-  totalFinancing    Float @default(0)
-  immInvest         Float @default(0)
+  totalFinancing    Decimal @default(0)
+  immInvest         Decimal @default(0)
 
   // CALCULATED
-  grossProfit       Float @default(0)
-  operatingProfit   Float @default(0)
-  netProfit         Float @default(0)
+  grossProfit       Decimal @default(0)
+  operatingProfit   Decimal @default(0)
+  netProfit         Decimal @default(0)
 
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
@@ -301,54 +301,54 @@ model MonthlyCashFlow {
   month           Int
 
   // INFLOWS
-  openingBalance    Float @default(0)
-  totalCollections  Float @default(0)
-  locationSales     Float @default(0)
-  invoiceCollections Float @default(0)
-  deliveryIncome    Float @default(0)
-  tipsMagnolia      Float @default(0)
-  tipsOrizont       Float @default(0)
-  cashInflow        Float @default(0)
-  cardInflow        Float @default(0)
-  transferInflow    Float @default(0)
-  otherIncome       Float @default(0)
-  totalInflows      Float @default(0)
+  openingBalance    Decimal @default(0)
+  totalCollections  Decimal @default(0)
+  locationSales     Decimal @default(0)
+  invoiceCollections Decimal @default(0)
+  deliveryIncome    Decimal @default(0)
+  tipsMagnolia      Decimal @default(0)
+  tipsOrizont       Decimal @default(0)
+  cashInflow        Decimal @default(0)
+  cardInflow        Decimal @default(0)
+  transferInflow    Decimal @default(0)
+  otherIncome       Decimal @default(0)
+  totalInflows      Decimal @default(0)
 
   // OUTFLOWS — COGS
-  cogsCash          Float @default(0)
-  cogsBar           Float @default(0)
-  cogsKitchen       Float @default(0)
-  cogsConsumables   Float @default(0)
-  cogsTransport     Float @default(0)
-  cogsDeliveryComm  Float @default(0)
+  cogsCash          Decimal @default(0)
+  cogsBar           Decimal @default(0)
+  cogsKitchen       Decimal @default(0)
+  cogsConsumables   Decimal @default(0)
+  cogsTransport     Decimal @default(0)
+  cogsDeliveryComm  Decimal @default(0)
 
   // OUTFLOWS — OPEX
-  opexTotal         Float @default(0)
-  peopleCash        Float @default(0)
-  licensesCash      Float @default(0)
-  servicesCash      Float @default(0)
-  authorizationsCash Float @default(0)
-  diverseCash       Float @default(0)
-  marketingCash     Float @default(0)
-  investmentsCash   Float @default(0)
+  opexTotal         Decimal @default(0)
+  peopleCash        Decimal @default(0)
+  licensesCash      Decimal @default(0)
+  servicesCash      Decimal @default(0)
+  authorizationsCash Decimal @default(0)
+  diverseCash       Decimal @default(0)
+  marketingCash     Decimal @default(0)
+  investmentsCash   Decimal @default(0)
 
   // OUTFLOWS — FIXED COSTS
-  fixedCostsCash    Float @default(0)
-  rentCash          Float @default(0)
-  utilitiesCash     Float @default(0)
-  bankFeesCash      Float @default(0)
+  fixedCostsCash    Decimal @default(0)
+  rentCash          Decimal @default(0)
+  utilitiesCash     Decimal @default(0)
+  bankFeesCash      Decimal @default(0)
 
   // OUTFLOWS — TAXES
-  taxesCash         Float @default(0)
-  incomeTaxCash     Float @default(0)
-  vatCash           Float @default(0)
-  otherTaxesCash    Float @default(0)
+  taxesCash         Decimal @default(0)
+  incomeTaxCash     Decimal @default(0)
+  vatCash           Decimal @default(0)
+  otherTaxesCash    Decimal @default(0)
 
   // OTHER
-  dividends         Float @default(0)
-  capitalInput      Float @default(0)
-  totalOutflows     Float @default(0)
-  closingBalance    Float @default(0)
+  dividends         Decimal @default(0)
+  capitalInput      Decimal @default(0)
+  totalOutflows     Decimal @default(0)
+  closingBalance    Decimal @default(0)
 
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
@@ -370,25 +370,25 @@ model MonthlyCOGS {
   month           Int
 
   // Materie Prima
-  rawMaterialOpenStock  Float @default(0)
-  rawMaterialPurchases  Float @default(0)
-  rawMaterialOutgoing   Float @default(0)
-  rawMaterialCloseStock Float @default(0)
-  rawMaterialCost       Float @default(0)
+  rawMaterialOpenStock  Decimal @default(0)
+  rawMaterialPurchases  Decimal @default(0)
+  rawMaterialOutgoing   Decimal @default(0)
+  rawMaterialCloseStock Decimal @default(0)
+  rawMaterialCost       Decimal @default(0)
 
   // Marfa
-  goodsOpenStock        Float @default(0)
-  goodsPurchases        Float @default(0)
-  goodsOutgoing         Float @default(0)
-  goodsCloseStock       Float @default(0)
-  goodsCost             Float @default(0)
+  goodsOpenStock        Decimal @default(0)
+  goodsPurchases        Decimal @default(0)
+  goodsOutgoing         Decimal @default(0)
+  goodsCloseStock       Decimal @default(0)
+  goodsCost             Decimal @default(0)
 
   // Ambalaje
-  packagingOpenStock    Float @default(0)
-  packagingPurchases    Float @default(0)
-  packagingOutgoing     Float @default(0)
-  packagingCloseStock   Float @default(0)
-  packagingCost         Float @default(0)
+  packagingOpenStock    Decimal @default(0)
+  packagingPurchases    Decimal @default(0)
+  packagingOutgoing     Decimal @default(0)
+  packagingCloseStock   Decimal @default(0)
+  packagingCost         Decimal @default(0)
 
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
@@ -407,13 +407,13 @@ model Employee {
   locationId      String
   department      String              // BUCATARIE, BAR, ADMINISTRATIV
   position        String              // RESPONSABIL BUCATARIE, BARISTA 1, etc.
-  grossSalary     Float   @default(0)
-  netSalary       Float   @default(0)
-  salaryTaxes     Float   @default(0)
-  mealTickets     Float   @default(0)
+  grossSalary     Decimal   @default(0)
+  netSalary       Decimal   @default(0)
+  salaryTaxes     Decimal   @default(0)
+  mealTickets     Decimal   @default(0)
   monthsWorked    Int     @default(11)
   monthsPaid      Int     @default(12)
-  annualCost      Float   @default(0)
+  annualCost      Decimal   @default(0)
   isActive        Boolean @default(true)
 
   createdAt       DateTime @default(now())
@@ -455,11 +455,11 @@ model PlSubcategory {
 model Dividend {
   id               String    @id @default(cuid())
   paymentDate      DateTime?
-  raiffeisenAmount Float     @default(0)
-  garantiAmount    Float     @default(0)
-  totalWithTaxes   Float     @default(0)
-  dividendAmount   Float     @default(0)
-  balance          Float     @default(0)
+  raiffeisenAmount Decimal     @default(0)
+  garantiAmount    Decimal     @default(0)
+  totalWithTaxes   Decimal     @default(0)
+  dividendAmount   Decimal     @default(0)
+  balance          Decimal     @default(0)
   notes            String?
 
   createdAt        DateTime  @default(now())
@@ -484,9 +484,9 @@ model MonthlyForecast {
   year           Int
   month          Int
   indicator      String
-  magnoliaValue  Float  @default(0)
-  orizontValue   Float  @default(0)
-  totalValue     Float  @default(0)
+  magnoliaValue  Decimal  @default(0)
+  orizontValue   Decimal  @default(0)
+  totalValue     Decimal  @default(0)
 
   @@unique([year, month, indicator])
   @@index([year, month])

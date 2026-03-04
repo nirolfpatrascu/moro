@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { prisma, serializeDecimal } from "@/lib/prisma";
 import { incomingInvoiceCreateSchema, bulkStatusUpdateSchema } from "@/lib/validations/incoming-invoice";
 import { parseDateFlexible } from "@/lib/excel";
 import { MONTHS_RO } from "@/lib/utils";
+import { VAT_MULTIPLIER } from "@/lib/constants";
+import { requireAuth } from "@/lib/auth-guard";
 
 /**
  * GET /api/incoming-invoices
@@ -10,6 +12,9 @@ import { MONTHS_RO } from "@/lib/utils";
  */
 export async function GET(request: NextRequest) {
   try {
+    const denied = await requireAuth();
+    if (denied) return denied;
+
     const { searchParams } = new URL(request.url);
     const locationId = searchParams.get("locationId");
     const status = searchParams.get("status");
@@ -49,7 +54,7 @@ export async function GET(request: NextRequest) {
       prisma.incomingInvoice.count({ where }),
     ]);
 
-    return NextResponse.json({
+    return NextResponse.json(serializeDecimal({
       data: invoices,
       pagination: {
         page,
@@ -57,7 +62,7 @@ export async function GET(request: NextRequest) {
         total,
         totalPages: Math.ceil(total / pageSize),
       },
-    });
+    }));
   } catch (error) {
     console.error("List incoming invoices error:", error);
     return NextResponse.json(
@@ -73,6 +78,9 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
+    const denied = await requireAuth();
+    if (denied) return denied;
+
     const body = await request.json();
     const parsed = incomingInvoiceCreateSchema.safeParse(body);
 
@@ -101,7 +109,7 @@ export async function POST(request: NextRequest) {
 
     // Auto-calculate amounts if not provided
     const totalAmount = data.totalAmount || 0;
-    const amountExVat = data.amountExVat || +(totalAmount / 1.19).toFixed(2);
+    const amountExVat = data.amountExVat || +(totalAmount / VAT_MULTIPLIER).toFixed(2);
     const vatAmount = data.vatAmount || +(totalAmount - amountExVat).toFixed(2);
     const paidAmount =
       data.paidAmount || (data.status === "PAID" ? totalAmount : 0);
@@ -140,7 +148,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    return NextResponse.json(invoice, { status: 201 });
+    return NextResponse.json(serializeDecimal(invoice), { status: 201 });
   } catch (error) {
     console.error("Create incoming invoice error:", error);
     return NextResponse.json(
@@ -156,6 +164,9 @@ export async function POST(request: NextRequest) {
  */
 export async function PATCH(request: NextRequest) {
   try {
+    const denied = await requireAuth();
+    if (denied) return denied;
+
     const body = await request.json();
     const parsed = bulkStatusUpdateSchema.safeParse(body);
 
@@ -180,8 +191,8 @@ export async function PATCH(request: NextRequest) {
           where: { id: inv.id },
           data: {
             status,
-            paidAmount: status === "PAID" ? inv.totalAmount : status === "UNPAID" ? 0 : inv.paidAmount,
-            remainingAmount: status === "PAID" ? 0 : status === "UNPAID" ? inv.totalAmount : inv.remainingAmount,
+            paidAmount: status === "PAID" ? Number(inv.totalAmount) : status === "UNPAID" ? 0 : Number(inv.paidAmount),
+            remainingAmount: status === "PAID" ? 0 : status === "UNPAID" ? Number(inv.totalAmount) : Number(inv.remainingAmount),
             paymentYear: status === "PAID" ? now.getFullYear() : null,
             paymentMonth: status === "PAID" ? MONTHS_RO[now.getMonth()] : null,
             paymentDay: status === "PAID" ? now.getDate() : null,

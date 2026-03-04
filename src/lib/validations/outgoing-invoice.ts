@@ -7,7 +7,7 @@ export const outgoingInvoiceCreateSchema = z.object({
   issueDate: z.string().optional().nullable(),
   dueDate: z.string().optional().nullable(),
   amountExVat: z.coerce.number().default(0),
-  totalAmount: z.coerce.number().min(0).default(0),
+  totalAmount: z.coerce.number().positive("Suma totala trebuie sa fie > 0"),
   paidAmount: z.coerce.number().default(0),
   unpaidAmount: z.coerce.number().default(0),
   status: z.enum(["PAID", "UNPAID", "PARTIAL"]).default("UNPAID"),

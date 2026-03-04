@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { prisma, serializeDecimal } from "@/lib/prisma";
+import { requireAuth } from "@/lib/auth-guard";
 
 export async function GET(request: NextRequest) {
   try {
+    const denied = await requireAuth();
+    if (denied) return denied;
+
     const q = request.nextUrl.searchParams.get("q")?.trim();
     if (!q || q.length < 2) {
       return NextResponse.json({ results: [] });
@@ -84,7 +88,7 @@ export async function GET(request: NextRequest) {
         }),
       ]);
 
-    return NextResponse.json({
+    return NextResponse.json(serializeDecimal({
       results: {
         incomingInvoices: incomingInvoices.map((inv) => ({
           id: inv.id,
@@ -115,7 +119,7 @@ export async function GET(request: NextRequest) {
           href: "/customers",
         })),
       },
-    });
+    }));
   } catch (error) {
     console.error("Search error:", error);
     return NextResponse.json(

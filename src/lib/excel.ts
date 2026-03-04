@@ -137,11 +137,17 @@ function formatDateForDisplay(date: Date): string {
   return `${day}/${month}/${year}`;
 }
 
-/** Parse a value to a number, returning 0 for non-numeric values */
+/** Parse a value to a number, returning 0 for non-numeric values.
+ *  Handles European format (1.000,50) by treating dots as thousand separators
+ *  when a comma is present. */
 export function parseNumeric(value: unknown): number {
   if (typeof value === "number") return value;
   if (typeof value === "string") {
-    const cleaned = value.replace(/[^\d.,-]/g, "").replace(",", ".");
+    let cleaned = value.replace(/[^\d.,-]/g, "");
+    // European format: dots are thousand separators, comma is decimal
+    if (cleaned.includes(",")) {
+      cleaned = cleaned.replace(/\./g, "").replace(",", ".");
+    }
     const num = parseFloat(cleaned);
     return isNaN(num) ? 0 : num;
   }

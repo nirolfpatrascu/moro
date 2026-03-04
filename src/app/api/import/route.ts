@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { parseExcelSheets } from "@/lib/excel";
+import { requireAuth } from "@/lib/auth-guard";
+import { rateLimit } from "@/lib/rate-limit";
 
 /**
  * POST /api/import
@@ -8,6 +10,14 @@ import { parseExcelSheets } from "@/lib/excel";
  */
 export async function POST(request: NextRequest) {
   try {
+    const denied = await requireAuth();
+    if (denied) return denied;
+
+    const ip = request.headers.get("x-forwarded-for") ?? "unknown";
+    if (rateLimit(`import:${ip}`, 5, 60_000)) {
+      return NextResponse.json({ error: "Prea multe cereri" }, { status: 429 });
+    }
+
     const formData = await request.formData();
     const file = formData.get("file") as File | null;
 

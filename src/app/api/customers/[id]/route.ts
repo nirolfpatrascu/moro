@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod/v4";
+import { requireAuth } from "@/lib/auth-guard";
 
 const updateCustomerSchema = z.object({
   name: z.string().min(1, "Numele clientului este obligatoriu"),
@@ -13,6 +14,9 @@ type RouteParams = { params: Promise<{ id: string }> };
  */
 export async function PUT(request: NextRequest, { params }: RouteParams) {
   try {
+    const denied = await requireAuth();
+    if (denied) return denied;
+
     const { id } = await params;
     const body = await request.json();
     const parsed = updateCustomerSchema.safeParse(body);
@@ -68,6 +72,9 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
  */
 export async function DELETE(_request: NextRequest, { params }: RouteParams) {
   try {
+    const denied = await requireAuth();
+    if (denied) return denied;
+
     const { id } = await params;
     const existing = await prisma.customer.findUnique({
       where: { id },

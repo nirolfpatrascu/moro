@@ -58,3 +58,9 @@ export const MONTHS_RO = [
 /** P&L category codes */
 export const PL_CATEGORIES = ["COGS", "COSTFIX", "OPEX", "TAXE", "PEOPLE"] as const;
 export type PlCategoryCode = (typeof PL_CATEGORIES)[number];
+
+/** Convert Romanian month name to 0-based index. Returns -1 if not found. */
+export function monthIndex(monthStr: string): number {
+  const idx = MONTHS_RO.indexOf(monthStr.toUpperCase() as typeof MONTHS_RO[number]);
+  return idx >= 0 ? idx : -1;
+}

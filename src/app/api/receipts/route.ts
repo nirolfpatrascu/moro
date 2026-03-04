@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { prisma, serializeDecimal } from "@/lib/prisma";
 import { receiptCreateSchema } from "@/lib/validations/receipt";
 import { parseDateFlexible } from "@/lib/excel";
+import { requireAuth } from "@/lib/auth-guard";
 
 /**
  * GET /api/receipts
@@ -9,6 +10,9 @@ import { parseDateFlexible } from "@/lib/excel";
  */
 export async function GET(request: NextRequest) {
   try {
+    const denied = await requireAuth();
+    if (denied) return denied;
+
     const { searchParams } = new URL(request.url);
     const locationId = searchParams.get("locationId");
     const type = searchParams.get("type");
@@ -66,19 +70,20 @@ export async function GET(request: NextRequest) {
       if (!dailyTotals[dateKey]) {
         dailyTotals[dateKey] = { sales: 0, refunds: 0, expenses: 0, net: 0 };
       }
+      const amt = Number(r.amount);
       if (r.type === "SALE") {
-        dailyTotals[dateKey].sales += r.amount;
-        dailyTotals[dateKey].net += r.amount;
+        dailyTotals[dateKey].sales += amt;
+        dailyTotals[dateKey].net += amt;
       } else if (r.type === "REFUND") {
-        dailyTotals[dateKey].refunds += r.amount;
-        dailyTotals[dateKey].net -= r.amount;
+        dailyTotals[dateKey].refunds += amt;
+        dailyTotals[dateKey].net -= amt;
       } else {
-        dailyTotals[dateKey].expenses += r.amount;
-        dailyTotals[dateKey].net -= r.amount;
+        dailyTotals[dateKey].expenses += amt;
+        dailyTotals[dateKey].net -= amt;
       }
     }
 
-    return NextResponse.json({
+    return NextResponse.json(serializeDecimal({
       data: receipts,
       dailyTotals,
       pagination: {
@@ -87,7 +92,7 @@ export async function GET(request: NextRequest) {
         total,
         totalPages: Math.ceil(total / pageSize),
       },
-    });
+    }));
   } catch (error) {
     console.error("List receipts error:", error);
     return NextResponse.json(
@@ -103,6 +108,9 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
+    const denied = await requireAuth();
+    if (denied) return denied;
+
     const body = await request.json();
     const parsed = receiptCreateSchema.safeParse(body);
 
@@ -133,7 +141,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    return NextResponse.json(receipt, { status: 201 });
+    return NextResponse.json(serializeDecimal(receipt), { status: 201 });
   } catch (error) {
     console.error("Create receipt error:", error);
     return NextResponse.json(

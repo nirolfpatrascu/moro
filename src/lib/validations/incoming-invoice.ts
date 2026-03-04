@@ -10,7 +10,7 @@ export const incomingInvoiceCreateSchema = z.object({
   itemDescription: z.string().optional().nullable(),
   qty: z.coerce.number().min(0).default(0),
   unitPrice: z.coerce.number().min(0).default(0),
-  totalAmount: z.coerce.number().min(0).default(0),
+  totalAmount: z.coerce.number().positive("Suma totala trebuie sa fie > 0"),
   status: z.enum(["PAID", "UNPAID", "PARTIAL"]).default("UNPAID"),
   notes: z.string().optional().nullable(),
   // P&L fields — optional, can be assigned later

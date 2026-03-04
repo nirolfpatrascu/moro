@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { MONTHS_RO } from "@/lib/utils";
+import { prisma, serializeDecimal } from "@/lib/prisma";
+import { MONTHS_RO, monthIndex } from "@/lib/utils";
+import { requireAuth } from "@/lib/auth-guard";
 
 // ── Category constants for P&L breakdown ──────────────────
 const COGS_CATS = ["BAR", "BUCATARIE", "CONSUMABILE", "TRANSPORT", "LIVRARE", "DIVERSE"];
@@ -15,6 +16,9 @@ const TAXE_CATS = ["IMPOZIT VENIT", "TVA", "ALTE TAXE"];
  */
 export async function GET(request: NextRequest) {
   try {
+    const denied = await requireAuth();
+    if (denied) return denied;
+
     const { searchParams } = new URL(request.url);
     const type = searchParams.get("type") || "summary";
     const period = searchParams.get("period") || "month";
@@ -25,32 +29,32 @@ export async function GET(request: NextRequest) {
 
     switch (type) {
       case "summary":
-        return NextResponse.json(await getSummary(from, to, locationId));
+        return NextResponse.json(serializeDecimal(await getSummary(from, to, locationId)));
       case "cashflow":
-        return NextResponse.json(await getCashFlow(locationId));
+        return NextResponse.json(serializeDecimal(await getCashFlow(locationId)));
       case "by-location":
-        return NextResponse.json(await getByLocation(from, to));
+        return NextResponse.json(serializeDecimal(await getByLocation(from, to)));
       case "by-category":
-        return NextResponse.json(await getByCategory(from, to, locationId));
+        return NextResponse.json(serializeDecimal(await getByCategory(from, to, locationId)));
       case "aging":
-        return NextResponse.json(await getAging());
+        return NextResponse.json(serializeDecimal(await getAging()));
       case "recent":
-        return NextResponse.json(await getRecent(locationId));
+        return NextResponse.json(serializeDecimal(await getRecent(locationId)));
       case "alerts":
-        return NextResponse.json(await getAlerts());
+        return NextResponse.json(serializeDecimal(await getAlerts()));
       case "top-suppliers":
-        return NextResponse.json(await getTopSuppliers(from, to, locationId));
+        return NextResponse.json(serializeDecimal(await getTopSuppliers(from, to, locationId)));
       case "pnl": {
         const year = parseInt(searchParams.get("year") || String(new Date().getFullYear()));
-        return NextResponse.json(await getPnl(year, locationId));
+        return NextResponse.json(serializeDecimal(await getPnl(year, locationId)));
       }
       case "cashflow-detail": {
         const year = parseInt(searchParams.get("year") || String(new Date().getFullYear()));
-        return NextResponse.json(await getCashFlowDetail(year, locationId));
+        return NextResponse.json(serializeDecimal(await getCashFlowDetail(year, locationId)));
       }
       case "cogs-detail": {
         const year = parseInt(searchParams.get("year") || String(new Date().getFullYear()));
-        return NextResponse.json(await getCogsDetail(year, locationId));
+        return NextResponse.json(serializeDecimal(await getCogsDetail(year, locationId)));
       }
       default:
         return NextResponse.json({ error: "Tip necunoscut" }, { status: 400 });
@@ -121,9 +125,13 @@ async function getSummary(from: Date, to: Date, locationId?: string) {
     _sum: { totalAmount: true },
   });
 
-  // Outstanding payables (unpaid incoming)
+  // Outstanding payables (unpaid incoming) — filtered by date range
   const payablesAgg = await prisma.incomingInvoice.aggregate({
-    where: { ...locFilter, status: { in: ["UNPAID", "PARTIAL"] } },
+    where: {
+      ...locFilter,
+      status: { in: ["UNPAID", "PARTIAL"] },
+      issueDateParsed: dateFilter,
+    },
     _sum: { remainingAmount: true },
     _count: true,
   });
@@ -148,9 +156,9 @@ async function getSummary(from: Date, to: Date, locationId?: string) {
     _sum: { totalSales: true },
   });
 
-  const revenue = revenueAgg._sum.totalSales || 0;
-  const prevRevenue = prevRevenueAgg._sum.totalSales || 0;
-  const expenses = expensesAgg._sum.totalAmount || 0;
+  const revenue = Number(revenueAgg._sum.totalSales) || 0;
+  const prevRevenue = Number(prevRevenueAgg._sum.totalSales) || 0;
+  const expenses = Number(expensesAgg._sum.totalAmount) || 0;
   const revenueTrend = prevRevenue > 0
     ? Math.round(((revenue - prevRevenue) / prevRevenue) * 100)
     : 0;
@@ -158,12 +166,12 @@ async function getSummary(from: Date, to: Date, locationId?: string) {
   return {
     revenue,
     revenueTrend,
-    receiptCount: revenueAgg._sum.receiptCount || 0,
+    receiptCount: Number(revenueAgg._sum.receiptCount) || 0,
     expenses,
     netProfit: revenue - expenses,
-    outstandingPayables: payablesAgg._sum.remainingAmount || 0,
+    outstandingPayables: Number(payablesAgg._sum.remainingAmount) || 0,
     outstandingPayablesCount: payablesAgg._count,
-    outstandingReceivables: receivablesAgg._sum.unpaidAmount || 0,
+    outstandingReceivables: Number(receivablesAgg._sum.unpaidAmount) || 0,
     outstandingReceivablesCount: receivablesAgg._count,
   };
 }
@@ -184,16 +192,22 @@ async function getCashFlow(locationId?: string) {
         where: { ...locFilter, date: { gte: d, lte: monthEnd } },
         _sum: { totalSales: true },
       }),
+      // Cash basis: use paymentYear/paymentMonth instead of issueDateParsed
       prisma.incomingInvoice.aggregate({
-        where: { ...locFilter, issueDateParsed: { gte: d, lte: monthEnd } },
-        _sum: { totalAmount: true },
+        where: {
+          ...locFilter,
+          paymentYear: d.getFullYear(),
+          paymentMonth: MONTHS_RO[d.getMonth()],
+          paidAmount: { gt: 0 },
+        },
+        _sum: { paidAmount: true },
       }),
     ]);
 
     months.push({
       month: monthLabel,
-      inflow: inflow._sum.totalSales || 0,
-      outflow: outflow._sum.totalAmount || 0,
+      inflow: Number(inflow._sum.totalSales) || 0,
+      outflow: Number(outflow._sum.paidAmount) || 0,
     });
   }
 
@@ -222,8 +236,8 @@ async function getByLocation(from: Date, to: Date) {
       return {
         location: loc.code,
         locationName: loc.name,
-        revenue: revenue._sum.totalSales || 0,
-        expenses: expenses._sum.totalAmount || 0,
+        revenue: Number(revenue._sum.totalSales) || 0,
+        expenses: Number(expenses._sum.totalAmount) || 0,
       };
     })
   );
@@ -247,7 +261,7 @@ async function getByCategory(from: Date, to: Date, locationId?: string) {
 
   return invoices.map((g) => ({
     category: g.plCategory,
-    amount: g._sum.totalAmount || 0,
+    amount: Number(g._sum.totalAmount) || 0,
     count: g._count,
   }));
 }
@@ -274,7 +288,7 @@ async function getAging() {
       const refDate = inv.dueDate || inv.issueDateParsed || now;
       const daysPast = Math.floor((now.getTime() - refDate.getTime()) / (1000 * 60 * 60 * 24));
       if (daysPast >= bucket.min && daysPast <= bucket.max) {
-        total += inv.remainingAmount;
+        total += Number(inv.remainingAmount);
       }
     }
     return { bucket: bucket.label, payables: total };
@@ -292,7 +306,7 @@ async function getAging() {
       const refDate = inv.dueDate || inv.issueDate || now;
       const daysPast = Math.floor((now.getTime() - refDate.getTime()) / (1000 * 60 * 60 * 24));
       if (daysPast >= bucket.min && daysPast <= bucket.max) {
-        total += inv.unpaidAmount;
+        total += Number(inv.unpaidAmount);
       }
     }
     return { bucket: bucket.label, receivables: total };
@@ -350,7 +364,7 @@ async function getRecent(locationId?: string) {
       id: d.id,
       type: "receipt" as const,
       description: `Incasari ${new Date(d.date).toLocaleDateString("ro-RO")}`,
-      amount: d.totalSales,
+      amount: Number(d.totalSales),
       date: d.date.toISOString(),
       location: d.location.code,
     })),
@@ -358,7 +372,7 @@ async function getRecent(locationId?: string) {
       id: i.id,
       type: "payable",
       description: `Factura ${i.invoiceNumber} — ${i.supplier.name}`,
-      amount: i.totalAmount,
+      amount: Number(i.totalAmount),
       date: i.createdAt.toISOString(),
       location: i.location.code,
     })),
@@ -366,7 +380,7 @@ async function getRecent(locationId?: string) {
       id: o.id,
       type: "receivable",
       description: `Factura ${o.invoiceNumber} — ${o.customer.name}`,
-      amount: o.totalAmount,
+      amount: Number(o.totalAmount),
       date: o.createdAt.toISOString(),
       location: o.location?.code || "—",
     })),
@@ -440,7 +454,7 @@ async function getTopSuppliers(from: Date, to: Date, locationId?: string) {
 
   return grouped.map((g) => ({
     supplier: supplierMap.get(g.supplierId) || "Necunoscut",
-    amount: g._sum.totalAmount || 0,
+    amount: Number(g._sum.totalAmount) || 0,
     count: g._count,
   }));
 }
@@ -450,10 +464,7 @@ function zeros(): number[] {
   return new Array(12).fill(0);
 }
 
-function monthIndex(monthStr: string): number {
-  const idx = MONTHS_RO.indexOf(monthStr.toUpperCase() as typeof MONTHS_RO[number]);
-  return idx >= 0 ? idx : -1;
-}
+// monthIndex is now imported from @/lib/utils
 
 // ── P&L Detail ───────────────────────────────────────────
 async function getPnl(year: number, locationId?: string) {
@@ -468,7 +479,7 @@ async function getPnl(year: number, locationId?: string) {
   const income = zeros();
   for (const d of dailyIncomes) {
     if (d.month >= 1 && d.month <= 12) {
-      income[d.month - 1] += d.totalSales;
+      income[d.month - 1] += Number(d.totalSales);
     }
   }
 
@@ -490,8 +501,8 @@ async function getPnl(year: number, locationId?: string) {
       if (m < 0) continue;
       const cat = inv.category.toUpperCase();
       if (!map[cat]) map[cat] = zeros();
-      map[cat][m] += inv.totalAmount;
-      map.total[m] += inv.totalAmount;
+      map[cat][m] += Number(inv.totalAmount);
+      map.total[m] += Number(inv.totalAmount);
     }
     return map;
   };
@@ -552,9 +563,9 @@ async function getCashFlowDetail(year: number, locationId?: string) {
   for (const d of dailyIncomes) {
     if (d.month >= 1 && d.month <= 12) {
       const m = d.month - 1;
-      cashSales[m] += d.cashAmount;
-      cardSales[m] += d.cardAmount;
-      transferSales[m] += d.transferAmount;
+      cashSales[m] += Number(d.cashAmount);
+      cardSales[m] += Number(d.cardAmount);
+      transferSales[m] += Number(d.transferAmount);
     }
   }
 
@@ -572,7 +583,7 @@ async function getCashFlowDetail(year: number, locationId?: string) {
   for (const inv of outgoingInvoices) {
     if (inv.paymentMonth) {
       const m = monthIndex(inv.paymentMonth);
-      if (m >= 0) invoiceCollections[m] += inv.paidAmount;
+      if (m >= 0) invoiceCollections[m] += Number(inv.paidAmount);
     }
   }
 
@@ -598,11 +609,11 @@ async function getCashFlowDetail(year: number, locationId?: string) {
     const m = monthIndex(inv.paymentMonth);
     if (m < 0) continue;
     switch (inv.plCategory) {
-      case "COGS": outCogs[m] += inv.paidAmount; break;
-      case "PEOPLE": outPeople[m] += inv.paidAmount; break;
-      case "OPEX": outOpex[m] += inv.paidAmount; break;
-      case "COSTFIX": outCostfix[m] += inv.paidAmount; break;
-      case "TAXE": outTaxe[m] += inv.paidAmount; break;
+      case "COGS": outCogs[m] += Number(inv.paidAmount); break;
+      case "PEOPLE": outPeople[m] += Number(inv.paidAmount); break;
+      case "OPEX": outOpex[m] += Number(inv.paidAmount); break;
+      case "COSTFIX": outCostfix[m] += Number(inv.paidAmount); break;
+      case "TAXE": outTaxe[m] += Number(inv.paidAmount); break;
     }
   }
 
@@ -651,15 +662,15 @@ async function getCogsDetail(year: number, locationId?: string) {
     if (m < 0) continue;
     const cat = inv.category.toUpperCase();
     if (!categories[cat]) categories[cat] = zeros();
-    categories[cat][m] += inv.totalAmount;
-    totalCogs[m] += inv.totalAmount;
+    categories[cat][m] += Number(inv.totalAmount);
+    totalCogs[m] += Number(inv.totalAmount);
 
     // Track supplier
     if (!supplierTotals[inv.supplierId]) {
       supplierTotals[inv.supplierId] = { total: 0, monthly: zeros() };
     }
-    supplierTotals[inv.supplierId].total += inv.totalAmount;
-    supplierTotals[inv.supplierId].monthly[m] += inv.totalAmount;
+    supplierTotals[inv.supplierId].total += Number(inv.totalAmount);
+    supplierTotals[inv.supplierId].monthly[m] += Number(inv.totalAmount);
   }
 
   // Revenue for COGS % calculation from DailyIncome
@@ -671,7 +682,7 @@ async function getCogsDetail(year: number, locationId?: string) {
   const revenue = zeros();
   for (const d of dailyIncomesForCogs) {
     if (d.month >= 1 && d.month <= 12) {
-      revenue[d.month - 1] += d.totalSales;
+      revenue[d.month - 1] += Number(d.totalSales);
     }
   }
 

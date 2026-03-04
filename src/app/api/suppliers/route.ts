@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod/v4";
+import { requireAuth } from "@/lib/auth-guard";
 
 const createSupplierSchema = z.object({
   name: z.string().min(1, "Numele furnizorului este obligatoriu"),
@@ -8,6 +9,9 @@ const createSupplierSchema = z.object({
 
 export async function GET() {
   try {
+    const denied = await requireAuth();
+    if (denied) return denied;
+
     const suppliers = await prisma.supplier.findMany({
       select: { id: true, name: true },
       orderBy: { name: "asc" },
@@ -24,6 +28,9 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    const denied = await requireAuth();
+    if (denied) return denied;
+
     const body = await request.json();
     const parsed = createSupplierSchema.safeParse(body);
 

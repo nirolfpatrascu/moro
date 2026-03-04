@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import * as XLSX from "xlsx";
 import { readMappedRows } from "@/lib/excel";
 import { importPreviewRequestSchema } from "@/lib/validations/incoming-invoice";
+import { requireAuth } from "@/lib/auth-guard";
+import { rateLimit } from "@/lib/rate-limit";
 
 /**
  * POST /api/import/preview
@@ -10,6 +12,14 @@ import { importPreviewRequestSchema } from "@/lib/validations/incoming-invoice";
  */
 export async function POST(request: NextRequest) {
   try {
+    const denied = await requireAuth();
+    if (denied) return denied;
+
+    const ip = request.headers.get("x-forwarded-for") ?? "unknown";
+    if (rateLimit(`import:${ip}`, 5, 60_000)) {
+      return NextResponse.json({ error: "Prea multe cereri" }, { status: 429 });
+    }
+
     const body = await request.json();
     const parsed = importPreviewRequestSchema.safeParse(body);
 

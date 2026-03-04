@@ -4,6 +4,9 @@ import { prisma } from "@/lib/prisma";
 import { readMappedRows, parseDateFlexible } from "@/lib/excel";
 import { importCommitRequestSchema } from "@/lib/validations/incoming-invoice";
 import { MONTHS_RO } from "@/lib/utils";
+import { VAT_MULTIPLIER } from "@/lib/constants";
+import { requireAuth } from "@/lib/auth-guard";
+import { rateLimit } from "@/lib/rate-limit";
 
 // Allow up to 5 minutes for large imports
 export const maxDuration = 300;
@@ -15,6 +18,14 @@ export const maxDuration = 300;
  */
 export async function POST(request: NextRequest) {
   try {
+    const denied = await requireAuth();
+    if (denied) return denied;
+
+    const ip = request.headers.get("x-forwarded-for") ?? "unknown";
+    if (rateLimit(`import:${ip}`, 5, 60_000)) {
+      return NextResponse.json({ error: "Prea multe cereri" }, { status: 429 });
+    }
+
     const body = await request.json();
     const parsed = importCommitRequestSchema.safeParse(body);
 
@@ -193,13 +204,12 @@ export async function POST(request: NextRequest) {
         }
         // If total exists but components are 0, calculate them
         if (amountExVat === 0 && vatAmount === 0 && totalAmount > 0) {
-          const vatRate = 0.19;
-          amountExVat = +(totalAmount / (1 + vatRate)).toFixed(2);
+          amountExVat = +(totalAmount / VAT_MULTIPLIER).toFixed(2);
           vatAmount = +(totalAmount - amountExVat).toFixed(2);
         }
 
         const paidAmount = Number(row.paidAmount) || 0;
-        const remainingAmount = Number(row.remainingAmount) || 0;
+        const remainingAmount = Math.max(0, totalAmount - paidAmount);
 
         let status = "UNPAID";
         if (paidAmount > 0 && paidAmount >= totalAmount) {

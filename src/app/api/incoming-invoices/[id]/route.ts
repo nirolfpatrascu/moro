@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { prisma, serializeDecimal } from "@/lib/prisma";
 import { incomingInvoiceUpdateSchema, invoiceStatusUpdateSchema } from "@/lib/validations/incoming-invoice";
 import { parseDateFlexible } from "@/lib/excel";
 import { MONTHS_RO } from "@/lib/utils";
+import { VAT_MULTIPLIER } from "@/lib/constants";
+import { requireAuth } from "@/lib/auth-guard";
 
 type RouteParams = { params: Promise<{ id: string }> };
 
@@ -11,6 +13,9 @@ type RouteParams = { params: Promise<{ id: string }> };
  */
 export async function GET(_request: NextRequest, { params }: RouteParams) {
   try {
+    const denied = await requireAuth();
+    if (denied) return denied;
+
     const { id } = await params;
     const invoice = await prisma.incomingInvoice.findUnique({
       where: { id },
@@ -27,7 +32,7 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    return NextResponse.json(invoice);
+    return NextResponse.json(serializeDecimal(invoice));
   } catch (error) {
     console.error("Get incoming invoice error:", error);
     return NextResponse.json(
@@ -42,6 +47,9 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
  */
 export async function PUT(request: NextRequest, { params }: RouteParams) {
   try {
+    const denied = await requireAuth();
+    if (denied) return denied;
+
     const { id } = await params;
     const body = await request.json();
     const parsed = incomingInvoiceUpdateSchema.safeParse(body);
@@ -65,6 +73,22 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     }
 
     const data = parsed.data;
+
+    // Bounds check: paidAmount cannot exceed totalAmount
+    if (data.paidAmount !== undefined && data.totalAmount !== undefined) {
+      if (data.paidAmount > data.totalAmount) {
+        return NextResponse.json(
+          { error: "Suma achitata nu poate depasi suma totala" },
+          { status: 400 }
+        );
+      }
+    } else if (data.paidAmount !== undefined && data.paidAmount > Number(existing.totalAmount)) {
+      return NextResponse.json(
+        { error: "Suma achitata nu poate depasi suma totala" },
+        { status: 400 }
+      );
+    }
+
     const updateData: Record<string, unknown> = {};
 
     if (data.locationId !== undefined) updateData.locationId = data.locationId;
@@ -98,16 +122,16 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
     if (data.totalAmount !== undefined) {
       updateData.totalAmount = data.totalAmount;
-      updateData.amountExVat = data.amountExVat || +(data.totalAmount / 1.19).toFixed(2);
+      updateData.amountExVat = data.amountExVat || +(data.totalAmount / VAT_MULTIPLIER).toFixed(2);
       updateData.vatAmount = data.vatAmount || +(data.totalAmount - (updateData.amountExVat as number)).toFixed(2);
     }
 
     if (data.paidAmount !== undefined || data.status !== undefined) {
-      const total = (data.totalAmount ?? existing.totalAmount) || 0;
+      const total = Number(data.totalAmount ?? existing.totalAmount) || 0;
       const status = data.status ?? existing.status;
-      const paidAmount = data.paidAmount ?? (status === "PAID" ? total : existing.paidAmount);
+      const paidAmount = data.paidAmount ?? (status === "PAID" ? total : Number(existing.paidAmount));
       updateData.paidAmount = paidAmount;
-      updateData.remainingAmount = data.remainingAmount ?? total - paidAmount;
+      updateData.remainingAmount = data.remainingAmount ?? total - Number(paidAmount);
     }
 
     const invoice = await prisma.incomingInvoice.update({
@@ -119,7 +143,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       },
     });
 
-    return NextResponse.json(invoice);
+    return NextResponse.json(serializeDecimal(invoice));
   } catch (error) {
     console.error("Update incoming invoice error:", error);
     return NextResponse.json(
@@ -135,6 +159,9 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
  */
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
   try {
+    const denied = await requireAuth();
+    if (denied) return denied;
+
     const { id } = await params;
     const body = await request.json();
     const parsed = invoiceStatusUpdateSchema.safeParse(body);
@@ -161,8 +188,8 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
     const now = new Date();
     const resolvedPaidAmount =
-      paidAmount ?? (status === "PAID" ? existing.totalAmount : status === "UNPAID" ? 0 : existing.paidAmount);
-    const remainingAmount = existing.totalAmount - resolvedPaidAmount;
+      paidAmount ?? (status === "PAID" ? Number(existing.totalAmount) : status === "UNPAID" ? 0 : Number(existing.paidAmount));
+    const remainingAmount = Number(existing.totalAmount) - Number(resolvedPaidAmount);
 
     const invoice = await prisma.incomingInvoice.update({
       where: { id },
@@ -180,7 +207,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       },
     });
 
-    return NextResponse.json(invoice);
+    return NextResponse.json(serializeDecimal(invoice));
   } catch (error) {
     console.error("Patch incoming invoice status error:", error);
     return NextResponse.json(
@@ -195,6 +222,9 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
  */
 export async function DELETE(_request: NextRequest, { params }: RouteParams) {
   try {
+    const denied = await requireAuth();
+    if (denied) return denied;
+
     const { id } = await params;
     const existing = await prisma.incomingInvoice.findUnique({
       where: { id },

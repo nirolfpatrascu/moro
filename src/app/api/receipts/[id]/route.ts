@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { prisma, serializeDecimal } from "@/lib/prisma";
 import { receiptUpdateSchema } from "@/lib/validations/receipt";
 import { parseDateFlexible } from "@/lib/excel";
+import { requireAuth } from "@/lib/auth-guard";
 
 type RouteParams = { params: Promise<{ id: string }> };
 
@@ -10,6 +11,9 @@ type RouteParams = { params: Promise<{ id: string }> };
  */
 export async function GET(_request: NextRequest, { params }: RouteParams) {
   try {
+    const denied = await requireAuth();
+    if (denied) return denied;
+
     const { id } = await params;
     const receipt = await prisma.receipt.findUnique({
       where: { id },
@@ -25,7 +29,7 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    return NextResponse.json(receipt);
+    return NextResponse.json(serializeDecimal(receipt));
   } catch (error) {
     console.error("Get receipt error:", error);
     return NextResponse.json(
@@ -40,6 +44,9 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
  */
 export async function PUT(request: NextRequest, { params }: RouteParams) {
   try {
+    const denied = await requireAuth();
+    if (denied) return denied;
+
     const { id } = await params;
     const body = await request.json();
     const parsed = receiptUpdateSchema.safeParse(body);
@@ -83,7 +90,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       },
     });
 
-    return NextResponse.json(receipt);
+    return NextResponse.json(serializeDecimal(receipt));
   } catch (error) {
     console.error("Update receipt error:", error);
     return NextResponse.json(
@@ -98,6 +105,9 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
  */
 export async function DELETE(_request: NextRequest, { params }: RouteParams) {
   try {
+    const denied = await requireAuth();
+    if (denied) return denied;
+
     const { id } = await params;
     const existing = await prisma.receipt.findUnique({ where: { id } });
 

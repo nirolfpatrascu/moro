@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Button, Input, Modal } from "@/components/ui";
 import { useToast } from "@/components/ui/toast";
+import { VAT_MULTIPLIER } from "@/lib/constants";
 import { Loader2, Plus } from "lucide-react";
 import { PL_CATEGORIES } from "@/lib/utils";
 
@@ -158,7 +159,7 @@ export function InvoiceFormModal({
     const unitPrice = parseFloat(form.unitPrice) || 0;
     if (qty > 0 && unitPrice > 0) {
       const total = +(qty * unitPrice).toFixed(2);
-      const exVat = +(total / 1.19).toFixed(2);
+      const exVat = +(total / VAT_MULTIPLIER).toFixed(2);
       const vat = +(total - exVat).toFixed(2);
       setForm((f) => ({
         ...f,
@@ -172,7 +173,7 @@ export function InvoiceFormModal({
   // Auto-calculate exVat/vat when total changes manually
   const handleTotalChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const total = parseFloat(e.target.value) || 0;
-    const exVat = +(total / 1.19).toFixed(2);
+    const exVat = +(total / VAT_MULTIPLIER).toFixed(2);
     const vat = +(total - exVat).toFixed(2);
     setForm((f) => ({
       ...f,

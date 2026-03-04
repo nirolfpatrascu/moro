@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod/v4";
+import { requireAuth } from "@/lib/auth-guard";
 
 const updateLocationSchema = z.object({
   name: z.string().min(1, "Numele locatiei este obligatoriu").optional(),
@@ -13,6 +14,9 @@ type RouteParams = { params: Promise<{ id: string }> };
 /** GET /api/locations/[id] — location with summary stats */
 export async function GET(_request: NextRequest, { params }: RouteParams) {
   try {
+    const denied = await requireAuth();
+    if (denied) return denied;
+
     const { id } = await params;
     const location = await prisma.location.findUnique({
       where: { id },
@@ -53,8 +57,8 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
       }),
     ]);
 
-    const revenue = revenueAgg._sum.amount || 0;
-    const expenses = expenseAgg._sum.totalAmount || 0;
+    const revenue = Number(revenueAgg._sum.amount) || 0;
+    const expenses = Number(expenseAgg._sum.totalAmount) || 0;
 
     return NextResponse.json({
       ...location,
@@ -76,6 +80,9 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
 /** PUT /api/locations/[id] */
 export async function PUT(request: NextRequest, { params }: RouteParams) {
   try {
+    const denied = await requireAuth();
+    if (denied) return denied;
+
     const { id } = await params;
     const body = await request.json();
     const parsed = updateLocationSchema.safeParse(body);
@@ -151,6 +158,9 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 /** DELETE /api/locations/[id] */
 export async function DELETE(_request: NextRequest, { params }: RouteParams) {
   try {
+    const denied = await requireAuth();
+    if (denied) return denied;
+
     const { id } = await params;
     const existing = await prisma.location.findUnique({
       where: { id },
